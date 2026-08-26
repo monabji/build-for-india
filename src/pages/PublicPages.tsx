@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authorities } from '../data/seed'
 import { statusLabels } from '../domain/rules'
 import type { ScenarioId } from '../domain/types'
@@ -68,12 +68,15 @@ export function GuidancePage() {
 }
 
 export function ApplyStartPage() {
+  const [searchParams] = useSearchParams()
+  const mode = searchParams.get('mode')
+  const startTarget = mode === 'caregiver' || mode === 'assisted' ? `/apply/about?mode=${mode}` : '/apply/about'
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Apply' }]} />
     <PageIntro eyebrow="New application" title="Apply for a disability certificate and UDID card"><p>Complete one guided application using synthetic information. This prototype does not connect to Aadhaar, medical records or the official UDID service.</p></PageIntro>
     <div className="info-columns"><section><h2>What you will need</h2><ul className="check-list"><li>Basic applicant and address information</li><li>Two synthetic document filenames</li><li>General disability category — no diagnosis</li><li>A preferred demo medical centre</li></ul></section><section><h2>What happens next</h2><ol><li>Complete 7 short steps</li><li>Review all answers</li><li>Receive a synthetic application ID</li></ol></section></div>
     <Alert title="Use synthetic information only">Do not enter real identity numbers, medical records, phone numbers or government document data.</Alert>
-    <div className="button-row"><Link className="primary-button" to="/apply/about">Start application</Link><Link className="text-button" to="/apply/about?resume=true">Resume saved draft</Link></div>
+    <div className="button-row"><Link className="primary-button" to={startTarget}>Start application</Link><Link className="text-button" to="/apply/about?resume=true">Resume saved draft</Link></div>
   </div>
 }
 
@@ -146,4 +149,3 @@ export function PrototypePage() {
 export function NotFoundPage() {
   return <div className="container narrow page-section"><PageIntro title="Page not found"><p>The page may have moved or the address may be incomplete.</p></PageIntro><Link className="primary-button" to="/">Return to task selection</Link></div>
 }
-
