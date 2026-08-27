@@ -2,7 +2,7 @@
 
 ## 1. Product identity
 
-**Product name:** UDID Saathi / साथी  
+**Product name:** UDID Saathi / साथी
 **Purpose:** A welcoming, accessible guide for disability certificate and Unique Disability ID (UDID) services in India.
 
 The experience is organised around citizen tasks rather than department terminology:
