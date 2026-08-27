@@ -11,5 +11,10 @@ describe('shared centre catalogue', () => {
     expect(new Set(authorities.map((centre) => centre.id)).size).toBe(authorities.length)
     expect(authorities.every((centre) => stateNames.includes(centre.state))).toBe(true)
   })
-})
 
+  it('provides multiple service points in larger service regions', () => {
+    expect(authorities.length).toBeGreaterThan(50)
+    expect(centresByState('Maharashtra')).toHaveLength(3)
+    expect(centresByState('Uttar Pradesh')).toHaveLength(3)
+  })
+})

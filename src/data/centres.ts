@@ -1,52 +1,76 @@
 import type { Authority } from '../domain/types'
 
-type CentreSeed = [state: string, district: string, longitude: number, latitude: number]
+type CentreSeed = [state: string, district: string, longitude: number, latitude: number, idSuffix?: string]
 
 const centreSeeds: CentreSeed[] = [
   ['Andaman and Nicobar Islands', 'South Andaman', 92.7265, 11.6234],
   ['Andhra Pradesh', 'Guntur', 80.6480, 16.3067],
+  ['Andhra Pradesh', 'Visakhapatnam', 83.2185, 17.6868, 'andhra-pradesh-visakhapatnam'],
+  ['Andhra Pradesh', 'Tirupati', 79.4192, 13.6288, 'andhra-pradesh-tirupati'],
   ['Arunachal Pradesh', 'Papum Pare', 93.6053, 27.0844],
   ['Assam', 'Kamrup Metropolitan', 91.7362, 26.1445],
+  ['Assam', 'Dibrugarh', 94.9120, 27.4728, 'assam-dibrugarh'],
   ['Bihar', 'Patna', 85.1376, 25.5941],
+  ['Bihar', 'Gaya', 84.9994, 24.7914, 'bihar-gaya'],
   ['Chandigarh', 'Chandigarh', 76.7794, 30.7333],
   ['Chhattisgarh', 'Raipur', 81.6296, 21.2514],
+  ['Chhattisgarh', 'Bilaspur', 82.1409, 22.0797, 'chhattisgarh-bilaspur'],
   ['Dadra and Nagar Haveli and Daman and Diu', 'Daman', 72.8328, 20.3974],
   ['Delhi', 'Central Delhi', 77.2090, 28.6139],
   ['Goa', 'North Goa', 73.8278, 15.4909],
   ['Gujarat', 'Ahmedabad', 72.5714, 23.0225],
+  ['Gujarat', 'Surat', 72.8311, 21.1702, 'gujarat-surat'],
   ['Haryana', 'Gurugram', 77.0266, 28.4595],
+  ['Haryana', 'Hisar', 75.7217, 29.1492, 'haryana-hisar'],
   ['Himachal Pradesh', 'Shimla', 77.1734, 31.1048],
+  ['Himachal Pradesh', 'Kangra', 76.2691, 32.0998, 'himachal-pradesh-kangra'],
   ['Jammu and Kashmir', 'Srinagar', 74.7973, 34.0837],
+  ['Jammu and Kashmir', 'Jammu', 74.8570, 32.7266, 'jammu-and-kashmir-jammu'],
   ['Jharkhand', 'Ranchi', 85.3096, 23.3441],
+  ['Jharkhand', 'Dhanbad', 86.4304, 23.7957, 'jharkhand-dhanbad'],
   ['Karnataka', 'Bengaluru Urban', 77.5946, 12.9716],
+  ['Karnataka', 'Mysuru', 76.6394, 12.2958, 'karnataka-mysuru'],
   ['Kerala', 'Thiruvananthapuram', 76.9366, 8.5241],
+  ['Kerala', 'Ernakulam', 76.2673, 9.9312, 'kerala-ernakulam'],
   ['Ladakh', 'Leh', 77.5770, 34.1526],
   ['Lakshadweep', 'Kavaratti', 72.6420, 10.5593],
   ['Madhya Pradesh', 'Bhopal', 77.4126, 23.2599],
+  ['Madhya Pradesh', 'Indore', 75.8577, 22.7196, 'madhya-pradesh-indore'],
   ['Maharashtra', 'Mumbai', 72.8777, 19.0760],
+  ['Maharashtra', 'Pune', 73.8567, 18.5204, 'maharashtra-pune'],
+  ['Maharashtra', 'Nagpur', 79.0882, 21.1458, 'maharashtra-nagpur'],
   ['Manipur', 'Imphal West', 93.9368, 24.8170],
   ['Meghalaya', 'East Khasi Hills', 91.8933, 25.5788],
   ['Mizoram', 'Aizawl', 92.7176, 23.7271],
   ['Nagaland', 'Kohima', 94.1086, 25.6751],
   ['Odisha', 'Khordha', 85.8245, 20.2961],
+  ['Odisha', 'Cuttack', 85.8245, 20.4625, 'odisha-cuttack'],
   ['Puducherry', 'Puducherry', 79.8083, 11.9416],
   ['Punjab', 'Ludhiana', 75.8573, 30.9010],
+  ['Punjab', 'Amritsar', 74.8723, 31.6340, 'punjab-amritsar'],
   ['Rajasthan', 'Jaipur', 75.7873, 26.9124],
+  ['Rajasthan', 'Jodhpur', 73.0243, 26.2389, 'rajasthan-jodhpur'],
   ['Sikkim', 'Gangtok', 88.6138, 27.3389],
   ['Tamil Nadu', 'Chennai', 80.2707, 13.0827],
+  ['Tamil Nadu', 'Coimbatore', 76.9558, 11.0168, 'tamil-nadu-coimbatore'],
   ['Telangana', 'Hyderabad', 78.4867, 17.3850],
+  ['Telangana', 'Warangal', 79.5941, 17.9689, 'telangana-warangal'],
   ['Tripura', 'West Tripura', 91.2868, 23.8315],
   ['Uttar Pradesh', 'Lucknow', 80.9462, 26.8467],
+  ['Uttar Pradesh', 'Prayagraj', 81.8463, 25.4358, 'uttar-pradesh-prayagraj'],
+  ['Uttar Pradesh', 'Varanasi', 82.9739, 25.3176, 'uttar-pradesh-varanasi'],
   ['Uttarakhand', 'Dehradun', 78.0322, 30.3165],
+  ['Uttarakhand', 'Haridwar', 78.0322, 29.9457, 'uttarakhand-haridwar'],
   ['West Bengal', 'Kolkata', 88.3639, 22.5726],
+  ['West Bengal', 'Siliguri', 88.3953, 26.7271, 'west-bengal-siliguri'],
 ]
 
 const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-export const stateNames = centreSeeds.map(([state]) => state)
+export const stateNames = [...new Set(centreSeeds.map(([state]) => state))]
 
-export const authorities: Authority[] = centreSeeds.map(([state, district, longitude, latitude]) => ({
-  id: `centre-${slug(state)}`,
+export const authorities: Authority[] = centreSeeds.map(([state, district, longitude, latitude, idSuffix]) => ({
+  id: `centre-${slug(idSuffix ?? state)}`,
   name: `${district} assessment and service centre`,
   district,
   state,
@@ -58,4 +82,3 @@ export const authorities: Authority[] = centreSeeds.map(([state, district, longi
 }))
 
 export const centresByState = (state: string) => authorities.filter((authority) => authority.state === state)
-

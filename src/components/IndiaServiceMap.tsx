@@ -90,7 +90,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
     setSelectedName(name)
     setSelectedCentre(available[0] ?? null)
     setView('map')
-    setAnnouncement(`${name} selected. ${centreCount(name)} centre available. ${available[0]?.name ?? ''} highlighted.`)
+    setAnnouncement(`${name} selected. ${centreCount(name)} ${available.length === 1 ? 'centre' : 'centres'} available. ${available[0]?.name ?? ''} highlighted.`)
   }
 
   const resetMap = () => {
