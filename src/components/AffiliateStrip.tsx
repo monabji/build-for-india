@@ -10,19 +10,23 @@ const affiliates = [
 ]
 
 export function AffiliateStrip() {
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(() => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches))
   const repeated = [...affiliates, ...affiliates]
 
   return <section className="affiliate-strip" aria-labelledby="affiliate-heading">
     <div className="container affiliate-heading-row">
-      <div><p className="eyebrow">Useful organisations</p><h2 id="affiliate-heading">Connected disability services</h2></div>
-      <button type="button" className="marquee-control" aria-pressed={paused} onClick={() => setPaused((value) => !value)}>
+      <div>
+        <p className="eyebrow">Official external resources</p>
+        <h2 id="affiliate-heading">Disability services and public organisations</h2>
+        <p className="affiliate-disclaimer">External links are shown for reference. Their inclusion does not imply endorsement.</p>
+      </div>
+      <button type="button" className="marquee-control" aria-pressed={paused} aria-label={`${paused ? 'Play' : 'Pause'} organisation logos`} onClick={() => setPaused((value) => !value)}>
         <span aria-hidden="true">{paused ? '▶' : 'Ⅱ'}</span> {paused ? 'Play logos' : 'Pause logos'}
       </button>
     </div>
     <div className="affiliate-window">
-      <div className={`affiliate-track ${paused ? 'is-paused' : ''}`}>
-        {repeated.map((affiliate, index) => <a className="affiliate-card" href={affiliate.href} target="_blank" rel="noreferrer" key={`${affiliate.short}-${index}`} aria-hidden={index >= affiliates.length ? 'true' : undefined} tabIndex={index >= affiliates.length ? -1 : undefined}>
+      <div className={`affiliate-track ${paused ? 'is-paused' : ''}`} aria-label="External public organisations">
+        {repeated.map((affiliate, index) => <a className="affiliate-card" href={affiliate.href} target="_blank" rel="noreferrer" key={`${affiliate.short}-${index}`} aria-label={`${affiliate.name} — opens in a new tab`} aria-hidden={index >= affiliates.length ? 'true' : undefined} tabIndex={index >= affiliates.length ? -1 : undefined}>
           <img src={affiliate.image} alt="" /><span><strong>{affiliate.short}</strong><small>{affiliate.name}</small></span>
         </a>)}
       </div>

@@ -6,28 +6,80 @@ import { useService } from '../state/ServiceContext'
 import { Alert, AssistantPanel, Breadcrumbs, PageIntro, StatusPanel, Timeline } from '../components/UI'
 import type { ApplicationRecord } from '../domain/types'
 import { FileField } from './ApplicationPage'
+import { JourneyRibbon } from '../components/JourneyRibbon'
 
 function resolveApplication(scenarios: Record<ScenarioId, ApplicationRecord>, id?: string) {
   if (!id) return null
   return (Object.entries(scenarios) as [ScenarioId, ApplicationRecord][]).find(([scenarioId, app]) => scenarioId === id || app.id.toLowerCase() === id.toLowerCase()) ?? null
 }
 
-const scenarioOptions: { id: ScenarioId; label: string; detail: string }[] = [
-  { id: 'new', label: 'New applicant', detail: 'Draft or recently submitted' },
-  { id: 'correction', label: 'Correction needed', detail: 'Rejected address proof' },
-  { id: 'appointment', label: 'Assessment scheduled', detail: 'Upcoming appointment' },
-  { id: 'approved', label: 'Approved', detail: 'Certificate and dispatch ready' },
+const serviceStages = [
+  { id: 'started', label: 'Started' },
+  { id: 'review', label: 'Document review' },
+  { id: 'assessment', label: 'Assessment' },
+  { id: 'decision', label: 'Decision' },
+  { id: 'certificate', label: 'Certificate' },
+  { id: 'dispatch', label: 'Card dispatch' },
 ]
 
+function journeyStageFor(app: ApplicationRecord) {
+  if (app.currentStatus === 'DRAFT' || app.currentStatus === 'SUBMITTED') return 'started'
+  if (['DOCUMENT_REVIEW', 'CORRECTION_REQUIRED'].includes(app.currentStatus)) return 'review'
+  if (['ASSESSMENT_SCHEDULED', 'MEDICAL_ASSESSMENT'].includes(app.currentStatus)) return 'assessment'
+  if (['DECISION_PENDING', 'APPROVED'].includes(app.currentStatus)) return 'decision'
+  if (app.currentStatus === 'CERTIFICATE_GENERATED') return 'certificate'
+  return 'dispatch'
+}
+
+function journeyOwnerFor(app: ApplicationRecord) {
+  if (app.currentStatus === 'DRAFT' || app.currentStatus === 'CORRECTION_REQUIRED') return 'You or your authorised helper'
+  if (['DOCUMENT_REVIEW', 'SUBMITTED'].includes(app.currentStatus)) return 'Document review team'
+  if (['ASSESSMENT_SCHEDULED', 'MEDICAL_ASSESSMENT'].includes(app.currentStatus)) return 'Selected medical authority'
+  if (['DECISION_PENDING', 'APPROVED'].includes(app.currentStatus)) return 'Medical authority decision stage'
+  return 'Certificate and card service'
+}
+
+function ServiceJourney({ app }: { app: ApplicationRecord }) {
+  return <JourneyRibbon mode="service-status" stages={serviceStages} currentStageId={journeyStageFor(app)} owner={journeyOwnerFor(app)} nextAction={app.currentNextAction} lastUpdated={app.updatedAt} nextUpdate="After the current stage is completed" />
+}
+
+function dashboardActionFor(app: ApplicationRecord) {
+  switch (app.currentStatus) {
+    case 'DRAFT':
+      return { required: true, title: app.currentNextAction, detail: 'Your saved answers are ready when you are.', label: 'Continue application', to: '/apply/identity' }
+    case 'CORRECTION_REQUIRED':
+      return { required: true, title: app.currentNextAction, detail: 'Only the document marked for correction needs to change. Everything else remains saved.', label: 'Fix this document', to: `/applications/${app.id}/correct` }
+    case 'ASSESSMENT_SCHEDULED':
+      return { required: true, title: app.currentNextAction, detail: app.appointment ? `${app.appointment.date} at ${app.appointment.time} · ${app.appointment.locationName}` : 'Open the appointment to review what to bring.', label: 'View appointment details', to: `/appointments/${app.id}` }
+    case 'CERTIFICATE_GENERATED':
+    case 'CARD_DISPATCHED':
+      return { required: true, title: app.currentNextAction, detail: 'Your certificate is available from this service.', label: 'View certificate', to: `/documents/${app.id}` }
+    default:
+      return { required: false, title: 'No action is needed from you right now.', detail: app.currentNextAction, label: 'View application timeline', to: `/applications/${app.id}/timeline` }
+  }
+}
+
 export function DashboardPage() {
-  const { scenarios, activeScenario, setActiveScenario, reset } = useService()
+  const { scenarios, activeScenario, verifiedScenario } = useService()
+  if (!verifiedScenario || verifiedScenario !== activeScenario) return <Navigate to="/track" replace />
   const app = scenarios[activeScenario]
   const attention = app.documents.filter((document) => document.status === 'CORRECTION_REQUIRED')
-  return <div className="container page-section">
-    <div className="demo-toolbar" aria-labelledby="demo-scenario-heading"><div><p className="eyebrow" id="demo-scenario-heading">Application view</p><p>Switch applications to see their status, timeline and next action.</p></div><select aria-label="Choose application" value={activeScenario} onChange={(e) => setActiveScenario(e.target.value as ScenarioId)}>{scenarioOptions.map((option) => <option key={option.id} value={option.id}>{option.label} — {option.detail}</option>)}</select><button className="text-button" onClick={reset}>Reset application data</button></div>
+  const primaryAction = dashboardActionFor(app)
+  return <div className="container page-section dashboard-page">
+    <div className="demo-toolbar" aria-label="Verified application"><div><p className="eyebrow">Verified application</p><p>{app.id} · Personal information is shown only for this matched reference.</p></div><Link className="text-button" to="/track">Track another application</Link></div>
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Your UDID services' }]} />
-    <PageIntro eyebrow={app.id} title={`Hello, ${app.applicantName}`}><p>See the current status, next action and full application history.</p></PageIntro>
+    <PageIntro eyebrow={app.id} title="What do you need to do today?"><h2 className="visually-hidden">Hello, {app.applicantName}</h2><p className="dashboard-greeting">Welcome back, {app.applicantName}. Your latest application information is below.</p></PageIntro>
     {app.mode !== 'SELF' && <p className="context-banner"><strong>Caregiver context:</strong> You are viewing {app.applicantName}'s application. Helper: {app.draft.caregiverName} ({app.draft.relationship}).</p>}
+    <section className={`dashboard-primary-action ${primaryAction.required ? 'dashboard-primary-action-required' : 'dashboard-primary-action-waiting'}`} aria-labelledby="dashboard-primary-action-heading">
+      <div className="dashboard-primary-action-copy">
+        <p className="eyebrow">{primaryAction.required ? 'Your next action' : 'Your application is moving'}</p>
+        <h2 id="dashboard-primary-action-heading">{primaryAction.title}</h2>
+        <p>{primaryAction.detail}</p>
+        <p className="dashboard-primary-action-status"><strong>Current status:</strong> {statusLabels[app.currentStatus]} · Updated {app.updatedAt}</p>
+      </div>
+      <Link className="primary-button dashboard-primary-action-link" to={primaryAction.to}>{primaryAction.label}</Link>
+    </section>
+    <ServiceJourney app={app} />
     <div className="dashboard-grid">
       <div><StatusPanel application={app} />
         <section className="dashboard-section"><div className="section-heading"><div><p className="eyebrow">Application history</p><h2>What has happened</h2></div><Link to={`/applications/${app.id}/timeline`}>View full timeline</Link></div><Timeline events={app.timeline} compact /></section>
@@ -46,63 +98,78 @@ export function DashboardPage() {
 }
 
 export function TimelinePage() {
-  const { scenarios } = useService()
+  const { scenarios, verifiedScenario } = useService()
   const { id } = useParams()
   const resolved = resolveApplication(scenarios, id)
-  if (!resolved) return <Navigate to="/track" replace />
+  if (!resolved || verifiedScenario !== resolved[0]) return <Navigate to="/track" replace />
   const [, app] = resolved
-  return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Application timeline' }]} /><PageIntro eyebrow={app.id} title="Application timeline"><p>Every visible status change has a dated event, explanation and next action.</p></PageIntro><StatusPanel application={app} /><section className="full-timeline"><h2>Full history</h2><Timeline events={app.timeline} /></section><Link className="secondary-button" to="/dashboard">Back to dashboard</Link></div>
+  return <div className="container page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Application timeline' }]} /><PageIntro eyebrow={app.id} title="Application timeline"><p>Every visible status change has a dated event, explanation and next action.</p></PageIntro><ServiceJourney app={app} /><div className="narrow"><StatusPanel application={app} /><section className="full-timeline"><h2>Full history</h2><Timeline events={app.timeline} /></section><Link className="secondary-button" to="/dashboard">Back to dashboard</Link></div></div>
 }
 
 export function CorrectionPage() {
-  const { scenarios, correctDocument, setActiveScenario } = useService()
+  const { scenarios, correctDocument, verifyScenario, verifiedScenario } = useService()
   const { id } = useParams()
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
   const [complete, setComplete] = useState(false)
+  const [submittedVersion, setSubmittedVersion] = useState<number | null>(null)
   const navigate = useNavigate()
   const resolved = resolveApplication(scenarios, id)
-  if (!resolved || resolved[1].currentStatus !== 'CORRECTION_REQUIRED') return <Navigate to="/track" replace />
+  if (!resolved || verifiedScenario !== resolved[0]) return <Navigate to="/track?intent=correction" replace />
   const [scenarioId, app] = resolved
+  if (!complete && app.currentStatus !== 'CORRECTION_REQUIRED') return <Navigate to="/track" replace />
   const problem = app.documents.find((document) => document.status === 'CORRECTION_REQUIRED')
+  const safeDocuments = app.documents.filter((document) => document.status !== 'CORRECTION_REQUIRED')
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!fileName) { setError('Choose a file or use the suggested filename.'); return }
-    correctDocument(scenarioId, fileName)
+    const updated = correctDocument(scenarioId, fileName)
+    const correctedDocument = updated.documents.find((document) => document.id === problem?.id)
+    setSubmittedVersion(correctedDocument?.version ?? null)
     setComplete(true)
   }
 
-  const openDashboard = () => { setActiveScenario(scenarioId); navigate('/dashboard') }
-  return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Correct application' }]} /><PageIntro eyebrow={app.id} title={complete ? 'Correction submitted' : 'Your application needs a correction'}><p>{complete ? 'The corrected document is now being reviewed.' : 'Only the address proof needs attention. The rest of the application is saved.'}</p></PageIntro>
-    {complete ? <><Alert type="success" title="Corrected document received">Version 2 was added and your timeline and notification were updated.</Alert><button className="primary-button" onClick={openDashboard}>View updated dashboard</button></> : <>
-      <section className="rejection-panel"><p className="eyebrow">What needs attention</p><h2>Address proof could not be verified</h2><p>Please upload a clearer document where the name and address are readable. Your other documents and answers are saved.</p><dl><div><dt>Document</dt><dd>{problem?.displayName}</dd></div><div><dt>Current version</dt><dd>Version {problem?.version}</dd></div><div><dt>Reason</dt><dd>Image is too unclear to read</dd></div></dl></section>
-      <form onSubmit={submit} className="correction-form"><h2>Upload corrected address proof</h2><FileField id="correctedAddressDocument" label="Corrected address proof" value={fileName} onChange={(value) => { setFileName(value); setError('') }} error={error} /><button className="primary-button" type="submit">Submit corrected document</button></form>
+  const openDashboard = () => { verifyScenario(scenarioId); navigate('/dashboard') }
+  return <div className="container page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Correct application' }]} /><PageIntro eyebrow={app.id} title={complete ? 'Correction submitted' : 'Fix one document — keep everything else'}><p>{complete ? 'The corrected document is now being reviewed.' : 'You do not need to restart or complete the application again.'}</p></PageIntro><ServiceJourney app={app} /><div className="narrow">
+    {complete ? <><Alert type="success" title="Corrected document received">{submittedVersion ? `Version ${submittedVersion} was added. ` : 'A new version was added. '}The application is back in document review; all other documents and answers were preserved. Your timeline and notifications were updated.</Alert><section className="correction-next-state" aria-labelledby="correction-next-state-heading"><p className="eyebrow">What changes now</p><h2 id="correction-next-state-heading">The reviewing office will check only the replacement</h2><p>No further action is needed unless the service contacts you. You can follow the review from your dashboard.</p></section><button className="primary-button" onClick={openDashboard}>View updated dashboard</button></> : <>
+      <section className="correction-safety-summary" aria-labelledby="correction-safety-heading">
+        <p className="eyebrow">Your progress is protected</p>
+        <h2 id="correction-safety-heading">{safeDocuments.length} of {app.documents.length} documents are safe</h2>
+        <div className="correction-safety-items">
+          <p><strong>Safe:</strong> {safeDocuments.map((document) => document.displayName).join(', ')} and all your application answers.</p>
+          <p><strong>Needs attention:</strong> Only {problem?.displayName.toLowerCase()}.</p>
+          <p><strong>After you upload:</strong> The application returns to document review without restarting.</p>
+        </div>
+      </section>
+      <section className="rejection-panel"><p className="eyebrow">One document needs attention</p><h2>{problem?.displayName} could not be verified</h2><p>Upload a clearer copy where the applicant's name and address can be read. Only this file will be replaced.</p><dl><div><dt>Document</dt><dd>{problem?.displayName}</dd></div><div><dt>Current version</dt><dd>Version {problem?.version}</dd></div><div><dt>Reason</dt><dd>The image is too unclear to read the name and address</dd></div><div><dt>Everything else</dt><dd>Saved and unchanged</dd></div></dl></section>
+      <section className="correction-after-resubmission" aria-labelledby="correction-after-heading"><p className="eyebrow">What happens after resubmission</p><h2 id="correction-after-heading">Your correction goes straight back to review</h2><ol><li>The clearer file is saved as a new document version.</li><li>The medical authority reviews the replacement.</li><li>Your dashboard, timeline and notification are updated.</li></ol></section>
+      <form onSubmit={submit} className="correction-form"><h2>Upload corrected address proof</h2><p className="correction-upload-guidance">Use a PDF, JPG or PNG up to 2 MB. Make sure the full document is visible, well lit and not blurred.</p><FileField id="correctedAddressDocument" label="Corrected address proof" value={fileName} onChange={(value) => { setFileName(value); setError('') }} error={error} /><button className="primary-button" type="submit">Upload corrected document</button></form>
       <AssistantPanel context="rejection" />
     </>}
-  </div>
+  </div></div>
 }
 
 export function AppointmentPage() {
-  const { scenarios, reschedule } = useService()
+  const { scenarios, reschedule, verifiedScenario } = useService()
   const { id } = useParams()
   const [editing, setEditing] = useState(false)
   const [date, setDate] = useState('8 September 2026')
   const [time, setTime] = useState('11:45 AM')
   const [saved, setSaved] = useState(false)
   const resolved = resolveApplication(scenarios, id)
-  if (!resolved || !resolved[1].appointment) return <Navigate to="/track" replace />
+  if (!resolved || verifiedScenario !== resolved[0] || !resolved[1].appointment) return <Navigate to="/track" replace />
   const [scenarioId, app] = resolved
   const appointment = app.appointment!
   const submit = (event: FormEvent) => { event.preventDefault(); reschedule(scenarioId, date, time); setSaved(true); setEditing(false) }
-  return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Appointment details' }]} /><PageIntro title="Your assessment appointment"><p>Review the time, place, accessibility information and preparation checklist.</p></PageIntro>{saved && <Alert type="success" title="Appointment updated">The application timeline and notification centre were updated too.</Alert>}<section className="appointment-detail"><p className="eyebrow">Upcoming appointment</p><h2>{saved ? date : appointment.date} at {saved ? time : appointment.time}</h2><h3>{appointment.locationName}</h3><p>{appointment.address}</p><dl><div><dt>Accessibility</dt><dd>{appointment.accessNotes}</dd></div><div><dt>Bring</dt><dd>Appointment letter and documents used in the application</dd></div><div><dt>Arrival</dt><dd>Arrive 20 minutes early</dd></div></dl></section>{editing ? <form className="reschedule-form" onSubmit={submit}><h2>Choose another time</h2><div className="field"><label htmlFor="new-date">Date</label><select id="new-date" value={date} onChange={(e) => setDate(e.target.value)}><option>8 September 2026</option><option>10 September 2026</option></select></div><div className="field"><label htmlFor="new-time">Time</label><select id="new-time" value={time} onChange={(e) => setTime(e.target.value)}><option>11:45 AM</option><option>2:15 PM</option></select></div><div className="button-row"><button type="button" className="text-button" onClick={() => setEditing(false)}>Cancel</button><button className="primary-button">Confirm appointment</button></div></form> : <button className="secondary-button" onClick={() => setEditing(true)}>Reschedule appointment</button>}</div>
+  return <div className="container page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Appointment details' }]} /><PageIntro title="Your assessment appointment"><p>Review the time, place, accessibility information and preparation checklist.</p></PageIntro><ServiceJourney app={app} /><div className="narrow">{saved && <Alert type="success" title="Appointment updated">The application timeline and notification centre were updated too.</Alert>}<section className="appointment-detail"><p className="eyebrow">Upcoming appointment</p><h2>{saved ? date : appointment.date} at {saved ? time : appointment.time}</h2><h3>{appointment.locationName}</h3><p>{appointment.address}</p><dl><div><dt>Accessibility</dt><dd>{appointment.accessNotes}</dd></div><div><dt>Bring</dt><dd>Appointment letter and documents used in the application</dd></div><div><dt>Arrival</dt><dd>Arrive 20 minutes early</dd></div></dl></section>{editing ? <form className="reschedule-form" onSubmit={submit}><h2>Choose another time</h2><div className="field"><label htmlFor="new-date">Date</label><select id="new-date" value={date} onChange={(e) => setDate(e.target.value)}><option>8 September 2026</option><option>10 September 2026</option></select></div><div className="field"><label htmlFor="new-time">Time</label><select id="new-time" value={time} onChange={(e) => setTime(e.target.value)}><option>11:45 AM</option><option>2:15 PM</option></select></div><div className="button-row"><button type="button" className="text-button" onClick={() => setEditing(false)}>Cancel</button><button className="primary-button">Confirm appointment</button></div></form> : <button className="secondary-button" onClick={() => setEditing(true)}>Reschedule appointment</button>}</div></div>
 }
 
 export function CertificatePage() {
-  const { scenarios } = useService()
+  const { scenarios, verifiedScenario } = useService()
   const { id } = useParams()
   const resolved = resolveApplication(scenarios, id)
-  if (!resolved || !['CERTIFICATE_GENERATED', 'CARD_DISPATCHED'].includes(resolved[1].currentStatus)) return <Navigate to="/track" replace />
+  if (!resolved || verifiedScenario !== resolved[0] || !['CERTIFICATE_GENERATED', 'CARD_DISPATCHED'].includes(resolved[1].currentStatus)) return <Navigate to="/track?intent=certificate" replace />
   const [, app] = resolved
   const download = () => {
     const content = `UDID CERTIFICATE\n\nNot an official document\nApplication: ${app.id}\nApplicant: ${app.applicantName}\nStatus: ${statusLabels[app.currentStatus]}\n\nThis file has no legal validity.`
@@ -113,5 +180,5 @@ export function CertificatePage() {
     anchor.click()
     URL.revokeObjectURL(url)
   }
-  return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Certificate' }]} /><PageIntro title="Your certificate"><p>Preview and download your certificate.</p></PageIntro><Alert type="warning" title="Not an official certificate">This document has no legal validity and cannot be used for any government or identity purpose.</Alert><article className="certificate"><div className="certificate-banner">NOT AN OFFICIAL DOCUMENT</div><p className="eyebrow">UDID Saathi</p><h2>Disability certificate</h2><dl><div><dt>Applicant</dt><dd>{app.applicantName}</dd></div><div><dt>Application reference</dt><dd>{app.id}</dd></div><div><dt>Status</dt><dd>Certificate generated</dd></div><div><dt>Generated</dt><dd>26 August 2026</dd></div></dl><p className="certificate-note">This document is not issued, signed or endorsed by any government authority.</p></article><div className="button-row"><button className="primary-button" onClick={download}>Download certificate</button><Link className="secondary-button" to="/dashboard">Back to dashboard</Link></div></div>
+  return <div className="container page-section"><Breadcrumbs items={[{ label: 'Dashboard', to: '/dashboard' }, { label: 'Certificate' }]} /><PageIntro title="Your certificate"><p>Preview and download your certificate.</p></PageIntro><ServiceJourney app={app} /><div className="narrow"><Alert type="warning" title="Not an official certificate">This document has no legal validity and cannot be used for any government or identity purpose.</Alert><article className="certificate"><div className="certificate-banner">NOT AN OFFICIAL DOCUMENT</div><p className="eyebrow">UDID Saathi</p><h2>Disability certificate</h2><dl><div><dt>Applicant</dt><dd>{app.applicantName}</dd></div><div><dt>Application reference</dt><dd>{app.id}</dd></div><div><dt>Status</dt><dd>Certificate generated</dd></div><div><dt>Generated</dt><dd>26 August 2026</dd></div></dl><p className="certificate-note">This document is not issued, signed or endorsed by any government authority.</p></article><div className="button-row"><button className="primary-button" onClick={download}>Download certificate</button><Link className="secondary-button" to="/dashboard">Back to dashboard</Link></div></div></div>
 }

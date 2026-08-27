@@ -37,6 +37,9 @@ export class DemoService {
   }
 
   submitDraft(draft: ApplicantDraft) {
+    if (this.scenarios.new.currentStatus !== 'DRAFT') {
+      this.scenarios.new = createSeedScenarios().new
+    }
     const record = this.scenarios.new
     record.applicantName = draft.applicantName
     record.draft = structuredClone(draft)
@@ -91,6 +94,34 @@ export class DemoService {
     })
     app.currentNextAction = `Attend the appointment on ${date} at ${time}.`
     app.notifications.unshift({ id: `note-${Date.now()}`, title: 'Appointment updated', body: app.currentNextAction, createdAt: app.updatedAt, read: false })
+    this.persist()
+    return structuredClone(app)
+  }
+
+  requestCardService(id: ScenarioId, serviceType: 'RENEWAL' | 'REPLACEMENT', reason: string) {
+    const app = this.scenarios[id]
+    const timestamp = nowLabel()
+    const serviceLabel = serviceType === 'RENEWAL' ? 'Renewal' : 'Replacement'
+    app.serviceType = serviceType
+    app.updatedAt = timestamp
+    app.currentNextAction = `The ${serviceLabel.toLowerCase()} request is being reviewed. No action is needed right now.`
+    app.timeline.unshift({
+      id: `event-${Date.now()}`,
+      status: app.currentStatus,
+      title: `${serviceLabel} request submitted`,
+      description: `Reason: ${reason}. The existing application history was preserved.`,
+      occurredAt: timestamp,
+      actorLabel: 'Applicant',
+      userActionRequired: false,
+      nextAction: app.currentNextAction,
+    })
+    app.notifications.unshift({
+      id: `note-${Date.now()}`,
+      title: `${serviceLabel} request received`,
+      body: app.currentNextAction,
+      createdAt: timestamp,
+      read: false,
+    })
     this.persist()
     return structuredClone(app)
   }

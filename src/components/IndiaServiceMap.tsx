@@ -48,7 +48,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
   const [loadError, setLoadError] = useState(false)
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [selectedCentre, setSelectedCentre] = useState<Authority | null>(null)
-  const [view, setView] = useState<'map' | 'list'>('map')
+  const [view, setView] = useState<'map' | 'list'>(() => typeof window !== 'undefined' && window.matchMedia?.('(max-width: 600px)').matches ? 'list' : 'map')
   const [announcement, setAnnouncement] = useState('Choose a state or union territory to see nearby centres.')
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
       {view === 'map' ? <div className="map-stage">
         {loadError && <div className="map-error" role="alert"><strong>The map could not be loaded.</strong><p>Use the state list to continue.</p><button className="secondary-button" type="button" onClick={() => setView('list')}>Open state list</button></div>}
         {!mapData && !loadError && <p className="map-loading" role="status">Loading state boundaries…</p>}
-        {mapData && path && projection && <svg className="india-map" viewBox="0 0 660 590" role="img" aria-labelledby="map-title map-description">
+        {mapData && path && projection && <svg className="india-map" viewBox="0 0 660 590" role="group" aria-labelledby="map-title map-description">
           <title id="map-title">Interactive map of India with state and union territory boundaries</title>
           <desc id="map-description">Select a boundary to zoom into that area and reveal service-centre markers. The state list provides the same controls.</desc>
           <g className="map-zoom-layer" style={{ transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` }}>

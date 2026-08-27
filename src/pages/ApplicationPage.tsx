@@ -4,8 +4,9 @@ import { emptyDraft } from '../data/seed'
 import { authorities, stateNames } from '../data/centres'
 import type { ApplicantDraft } from '../domain/types'
 import { useService } from '../state/ServiceContext'
-import { Alert, AssistantPanel, Breadcrumbs, ProgressSteps } from '../components/UI'
+import { Alert, AssistantPanel, Breadcrumbs } from '../components/UI'
 import { readUpload, validateUpload } from '../domain/uploads'
+import { JourneyRibbon } from '../components/JourneyRibbon'
 
 const steps = [
   { id: 'about', label: 'About the applicant' },
@@ -15,6 +16,16 @@ const steps = [
   { id: 'documents', label: 'Documents' },
   { id: 'authority', label: 'Medical authority' },
   { id: 'review', label: 'Review and submit' },
+]
+
+const ribbonSteps = [
+  { id: 'about', label: 'Applicant' },
+  { id: 'identity', label: 'Address' },
+  { id: 'caregiver', label: 'Helper' },
+  { id: 'disability', label: 'Disability' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'authority', label: 'Centre' },
+  { id: 'review', label: 'Review' },
 ]
 
 const demoDraft: ApplicantDraft = {
@@ -72,6 +83,7 @@ export function ApplicationPage() {
   const current = steps.findIndex((item) => item.id === step)
 
   if (current < 0) return <Navigate to="/apply/about" replace />
+  const nextAction = step === 'review' ? 'Confirm the declaration and submit the application' : `Continue to ${steps[current + 1].label.toLowerCase()}`
 
   const update = <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => setDraft((state) => ({ ...state, [key]: value }))
   const describedBy = (id: string, hint?: boolean) => [hint ? `${id}-hint` : '', errors[id] ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
@@ -102,8 +114,8 @@ export function ApplicationPage() {
 
   return <div className="container page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Apply', to: '/apply' }, { label: steps[current].label }]} />
-    <div className="application-layout">
-      <aside><ProgressSteps current={current} labels={steps.map((item) => item.label)} /></aside>
+    <JourneyRibbon mode="application" stages={ribbonSteps} currentStageId={step} nextAction={nextAction} saved={saveState || 'Progress saves on this device'} />
+    <div className="application-layout application-layout--ribbon">
       <div className="form-column">
         <p className="context-banner"><strong>Applicant:</strong> {draft.applicantName || 'Not entered yet'} <span>·</span> <strong>Mode:</strong> {draft.mode === 'SELF' ? 'Applying for myself' : draft.mode === 'CAREGIVER' ? 'Caregiver application' : 'Assisted-service application'}</p>
         <form onSubmit={next} noValidate>
@@ -202,10 +214,10 @@ function Review({ draft, errors, update }: { draft: ApplicantDraft; errors: Erro
 }
 
 export function ConfirmationPage() {
-  const { scenarios, setActiveScenario } = useService()
+  const { scenarios, verifyScenario } = useService()
   const navigate = useNavigate()
   const app = scenarios.new
   if (app.currentStatus === 'DRAFT') return <Navigate to="/apply" replace />
-  const goDashboard = () => { setActiveScenario('new'); navigate('/dashboard') }
+  const goDashboard = () => { verifyScenario('new'); navigate('/dashboard') }
   return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Application complete' }]} /><section className="confirmation-panel"><p className="confirmation-icon" aria-hidden="true">✓</p><p className="eyebrow">Application received</p><h1>Your application has been submitted</h1><p>You can now follow its progress from your dashboard.</p><dl><div><dt>Application ID</dt><dd>{app.id}</dd></div><div><dt>Applicant</dt><dd>{app.applicantName}</dd></div><div><dt>Next step</dt><dd>{app.currentNextAction}</dd></div></dl><button className="primary-button" onClick={goDashboard}>View application dashboard</button></section></div>
 }

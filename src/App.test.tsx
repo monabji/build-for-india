@@ -17,6 +17,12 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 describe('privacy-safe tracking journey', () => {
+  it('redirects direct dashboard access to secure tracking', async () => {
+    renderRoute('/dashboard')
+    expect(await screen.findByLabelText('Application reference')).toBeInTheDocument()
+    expect(screen.queryByText('Meena Das')).not.toBeInTheDocument()
+  })
+
   it('does not reveal applicant records before verification', () => {
     renderRoute('/track')
     expect(screen.queryByText('Meena Das')).not.toBeInTheDocument()
@@ -44,10 +50,18 @@ describe('route and form accessibility', () => {
     expect(await screen.findByRole('heading', { name: 'Apply for a disability certificate and UDID card' })).toBeInTheDocument()
   })
 
-  it('uses the URL application ID to load the correct timeline', () => {
+  it('does not expose a personal timeline from an unverified URL', async () => {
     renderRoute('/applications/UDID-31842/timeline')
-    expect(screen.getByText('UDID-31842')).toBeInTheDocument()
-    expect(screen.getByText('Address proof needs a correction')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Application reference')).toBeInTheDocument()
+    expect(screen.queryByText('Rohan Verma')).not.toBeInTheDocument()
+  })
+
+  it('opens the correction matched by its reference after verification', async () => {
+    renderRoute('/track?intent=correction')
+    fireEvent.change(screen.getByLabelText('Application reference'), { target: { value: 'UDID-31842' } })
+    fireEvent.change(screen.getByLabelText('Applicant’s date of birth'), { target: { value: '1992-06-14' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to correction' }))
+    expect(await screen.findByRole('heading', { name: 'Fix one document — keep everything else' })).toBeInTheDocument()
   })
 
   it('provides a linked error summary for keyboard users', async () => {
@@ -57,4 +71,3 @@ describe('route and form accessibility', () => {
     expect(screen.getByRole('link', { name: 'Enter the applicant’s name.' })).toHaveAttribute('href', '#applicantName')
   })
 })
-

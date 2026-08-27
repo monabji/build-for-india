@@ -38,5 +38,18 @@ describe('demo service transition contract', () => {
     expect(scenarios.appointment.appointment?.status).toBe('UPCOMING')
     expect(scenarios.approved.currentStatus).toBe('CARD_DISPATCHED')
   })
-})
 
+  it('persists a replacement request in the existing application history', () => {
+    const service = demoServiceForTest()
+    const before = service.getApplication('approved')
+    const after = service.requestCardService('approved', 'REPLACEMENT', 'Card was lost')
+
+    expect(after.serviceType).toBe('REPLACEMENT')
+    expect(after.timeline).toHaveLength(before.timeline.length + 1)
+    expect(after.timeline[0]).toMatchObject({
+      title: 'Replacement request submitted',
+      actorLabel: 'Applicant',
+    })
+    expect(after.notifications[0].title).toBe('Replacement request received')
+  })
+})

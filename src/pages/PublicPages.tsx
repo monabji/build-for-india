@@ -6,42 +6,63 @@ import { useService } from '../state/ServiceContext'
 import { Alert, Breadcrumbs, PageIntro, TaskCard } from '../components/UI'
 import { IndiaServiceMap } from '../components/IndiaServiceMap'
 import { ServiceIcon } from '../components/ServiceIcon'
+import { SaathiIllustration } from '../components/SaathiIllustration'
+import { JourneyRibbon } from '../components/JourneyRibbon'
 
 export function HomePage() {
   return <>
-    <section className="home-intro"><div className="container welcome-grid">
-      <div className="welcome-copy"><p className="eyebrow">Namaste — we’ll guide you</p>
-        <h1>How can we help you today?</h1>
-        <p className="lead">Tell us what has happened. Saathi will take you to the right UDID task without department language or guesswork.</p>
-        <div className="welcome-actions"><Link className="primary-button" to="/apply">Start a new application</Link><Link to="/start">I’m not sure what I need</Link></div>
+    <section className="home-intro">
+      <div className="container home-opening">
+        <div className="welcome-grid">
+          <div className="welcome-copy">
+            <p className="eyebrow">Namaste · UDID Saathi / साथी</p>
+            <h1>How can we help you today?</h1>
+            <p className="lead">Choose what has happened. Your Saathi Path keeps your place, explains the next step and helps you recover if something needs attention.</p>
+            <p className="welcome-support-link"><Link to="/apply?mode=caregiver">I am applying for someone else</Link></p>
+          </div>
+          <aside className="journey-glance saathi-illustration-panel" aria-label="How the Saathi Path helps">
+            <SaathiIllustration />
+          </aside>
+        </div>
+
+        <section className="home-primary-tasks" aria-labelledby="primary-task-heading">
+          <div className="section-title-row home-task-heading"><div><p className="eyebrow">Choose your task</p><h2 id="primary-task-heading">Start with what you need now</h2></div><p>Each route uses plain language and shows what happens next.</p></div>
+          <div className="task-grid priority-task-grid">
+            <TaskCard icon="apply" to="/apply" title="Apply for a UDID card">See what you need and start one guided application.</TaskCard>
+            <TaskCard icon="track" to="/track" title="Track my application">See the latest update, your next action and who can help.</TaskCard>
+            <TaskCard icon="fix" to="/track?intent=correction" title="Fix my application">Replace only the document that needs attention. Everything else stays saved.</TaskCard>
+          </div>
+        </section>
       </div>
-      <aside className="journey-glance" aria-label="A clear path through the service">
-        <p className="eyebrow">Your path stays visible</p>
-        <ol><li><span>1</span><div><strong>Tell us your situation</strong><small>Choose a task in plain language</small></div></li><li><span>2</span><div><strong>Move one step at a time</strong><small>Your progress is saved</small></div></li><li><span>3</span><div><strong>Always know what’s next</strong><small>Status, action and help together</small></div></li></ol>
-      </aside>
-    </div></section>
-    <div className="container page-section">
-      <div className="section-title-row"><div><p className="eyebrow">Choose your task</p><h2>What would you like to do?</h2></div><p>Each route keeps your place and explains what happens next.</p></div>
-      <div className="task-grid" aria-label="Choose a task">
-        <TaskCard icon="apply" to="/apply" title="Apply for a UDID card">See what you need and start a guided application.</TaskCard>
-        <TaskCard icon="track" to="/track" title="Track my application">See the latest status, next action and timeline.</TaskCard>
-        <TaskCard icon="fix" to="/applications/UDID-31842/correct" title="Fix a rejected application">Understand the problem and replace only what is needed.</TaskCard>
-        <TaskCard icon="renew" to="/renew" title="Renew my card">Check the requirements and start a renewal.</TaskCard>
-        <TaskCard icon="replace" to="/replace" title="Replace a lost or damaged card">Get a clear replacement route without starting over.</TaskCard>
-        <TaskCard icon="certificate" to="/documents/UDID-53906" title="Download my certificate">Open your certificate and save a copy.</TaskCard>
-      </div>
-      <div className="information-grid">
+    </section>
+
+    <div className="container page-section home-content-flow">
+      <section className="guidance-strip home-guided-choice" aria-labelledby="unsure-heading">
+        <div><p className="eyebrow">Saathi can point the way</p><h2 id="unsure-heading">Not sure which service you need?</h2><p>Answer two plain-language questions. We will suggest a route without making an eligibility decision.</p></div>
+        <Link className="secondary-button" to="/start">Help me choose</Link>
+      </section>
+
+      <section className="secondary-services" aria-labelledby="secondary-services-heading">
+        <div className="section-title-row"><div><p className="eyebrow">Continue your UDID journey</p><h2 id="secondary-services-heading">Cards and certificates</h2></div><p>Use these routes when you already have a card or issued document.</p></div>
+        <div className="task-grid supporting-task-grid">
+          <TaskCard icon="renew" to="/renew" title="Renew my card">Check the requirements and start a renewal.</TaskCard>
+          <TaskCard icon="replace" to="/replace" title="Replace a lost or damaged card">Get a clear replacement route without starting over.</TaskCard>
+          <TaskCard icon="certificate" to="/track?intent=certificate" title="Download my certificate">Open your certificate and save a copy.</TaskCard>
+        </div>
+      </section>
+
+      <div className="information-grid home-information-section">
         <section className="notice-board" aria-labelledby="notices-heading">
-          <div className="panel-title"><span><ServiceIcon name="notice" /></span><div><p className="eyebrow">Announcements</p><h2 id="notices-heading">Notices and circulars</h2></div></div>
+          <div className="panel-title"><span><ServiceIcon name="notice" /></span><div><p className="eyebrow">Important guidance</p><h2 id="notices-heading">Notices and circulars</h2></div></div>
           <ol className="notice-list">
             <li><time dateTime="2026-08-27">27 Aug 2026</time><Link to="/help">Document upload guidance and accepted file checks</Link><span>Guidance</span></li>
             <li><time dateTime="2026-08-21">21 Aug 2026</time><Link to="/find-help">Accessibility information for visiting service centres</Link><span>Service update</span></li>
-            <li><time dateTime="2026-08-12">12 Aug 2026</time><Link to="/applications/UDID-31842/correct">How to correct an application without starting again</Link><span>Circular</span></li>
+            <li><time dateTime="2026-08-12">12 Aug 2026</time><Link to="/track?intent=correction">How to correct an application without starting again</Link><span>Circular</span></li>
           </ol>
-          <Link className="panel-link" to="/help">View all notices <span aria-hidden="true">→</span></Link>
+          <Link className="panel-link" to="/help">View all guidance <span aria-hidden="true">→</span></Link>
         </section>
         <section className="document-preview-panel" aria-labelledby="document-preview-heading">
-          <div><p className="eyebrow">Know your document</p><h2 id="document-preview-heading">What a UDID certificate contains</h2><p>Your digital certificate brings identity, disability-category and issuing-authority information together in one document.</p><Link to="/documents/UDID-53906">Open certificate area <span aria-hidden="true">→</span></Link></div>
+          <div><p className="eyebrow">Know your document</p><h2 id="document-preview-heading">What a UDID certificate contains</h2><p>See where identity, disability-category and issuing-authority information appears before you download a document.</p><Link to="/track?intent=certificate">Open certificate area <span aria-hidden="true">→</span></Link></div>
           <div className="certificate-preview" role="img" aria-label="A visual preview of a UDID certificate showing the State Emblem of India, certificate title, photograph area and key information fields">
             <div className="certificate-preview-head"><img src="/assets/state-emblem.svg" alt="" /><span><strong>Unique Disability ID</strong><small>Government of India</small></span></div>
             <div className="certificate-preview-body"><div className="photo-placeholder" aria-hidden="true"><ServiceIcon name="certificate" /></div><dl><div><dt>Name</dt><dd>•••• ••••</dd></div><div><dt>UDID number</dt><dd>•••• •••• ••••</dd></div><div><dt>Issue date</dt><dd>•• / •• / ••••</dd></div></dl></div>
@@ -49,17 +70,20 @@ export function HomePage() {
           </div>
         </section>
       </div>
-      <section className="guidance-strip" aria-labelledby="unsure-heading">
-        <div><h2 id="unsure-heading">Not sure what to do?</h2><p>Answer two plain-language questions and we will point you to the right service.</p></div>
-        <Link className="secondary-button" to="/start">Help me choose</Link>
+
+      <section className="home-centre-discovery" aria-label="Find support near you">
+        <IndiaServiceMap compact />
       </section>
-      <section className="support-grid" aria-labelledby="other-help-heading">
+
+      <section className="support-grid home-assisted-routes" aria-labelledby="other-help-heading">
+        <p className="eyebrow">Help that respects each person’s role</p>
         <h2 id="other-help-heading">Applying with or for someone else</h2>
-        <TaskCard to="/apply?mode=caregiver" title="I am applying for someone else">Keep the applicant and caregiver details clearly separated.</TaskCard>
+        <p>Saathi keeps applicant, caregiver and service-operator details separate throughout the journey.</p>
+        <TaskCard to="/apply?mode=caregiver" title="I am applying for someone else">Start with clear consent and keep the applicant’s identity at the centre.</TaskCard>
         <TaskCard to="/apply?mode=assisted" title="I am helping at a service centre">Use larger controls and a printable preparation checklist.</TaskCard>
       </section>
-      <IndiaServiceMap compact />
-      <section className="link-cluster" aria-label="More help">
+
+      <section className="link-cluster home-help-links" aria-label="More help">
         <Link to="/find-help">Find a medical centre</Link>
         <Link to="/help">Understand the process</Link>
         <Link to="/prototype">Privacy and service information</Link>
@@ -74,7 +98,7 @@ export function GuidancePage() {
   const result = useMemo(() => {
     if (!hasApplication) return null
     if (hasApplication === 'no') return { to: '/apply', title: 'Start a new application', detail: 'We will explain the requirements before asking for information.' }
-    if (need === 'rejected') return { to: '/applications/UDID-31842/correct', title: 'Fix the application', detail: 'Replace the problem document without restarting.' }
+    if (need === 'rejected') return { to: '/track?intent=correction', title: 'Fix the application', detail: 'Verify the application, then replace the problem document without restarting.' }
     if (need === 'lost') return { to: '/replace', title: 'Replace the card', detail: 'Use the replacement service for a lost or damaged card.' }
     if (need === 'expired') return { to: '/renew', title: 'Renew the card', detail: 'Review the renewal requirements and continue.' }
     if (need === 'status') return { to: '/track', title: 'Track the application', detail: 'See what happened and what to do next.' }
@@ -108,8 +132,10 @@ export function ApplyStartPage() {
 }
 
 export function TrackPage() {
-  const { scenarios, setActiveScenario } = useService()
+  const { scenarios, verifyScenario } = useService()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const intent = searchParams.get('intent')
   const [reference, setReference] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [error, setError] = useState('')
@@ -117,18 +143,21 @@ export function TrackPage() {
     event.preventDefault()
     const match = (Object.entries(scenarios) as [ScenarioId, typeof scenarios[ScenarioId]][]).find(([, app]) => app.id.toUpperCase() === reference.trim().toUpperCase() && app.draft.dateOfBirth === dateOfBirth)
     if (!match) { setError('We could not match that reference and date of birth. Check both entries and try again.'); return }
-    setActiveScenario(match[0])
-    navigate('/dashboard')
+    verifyScenario(match[0])
+    if (intent === 'correction' && match[0] === 'correction') navigate(`/applications/${match[1].id}/correct`)
+    else if (intent === 'certificate' && match[0] === 'approved') navigate(`/documents/${match[1].id}`)
+    else navigate('/dashboard')
   }
+  const sample = intent === 'correction' ? scenarios.correction : intent === 'certificate' ? scenarios.approved : scenarios.appointment
   return <div className="container page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Track an application' }]} />
-    <PageIntro title="Track an application"><p>Enter two matching details before any personal information or application status is shown.</p></PageIntro>
-    <div className="secure-lookup-grid"><form className="lookup-form" onSubmit={submit} noValidate><h2>Find your application</h2><div className="field"><label htmlFor="tracking-reference">Application reference</label><input id="tracking-reference" value={reference} onChange={(event) => { setReference(event.target.value); setError('') }} autoComplete="off" placeholder="For example, UDID-42715" /></div><div className="field"><label htmlFor="tracking-dob">Applicant’s date of birth</label><input id="tracking-dob" type="date" value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); setError('') }} /></div>{error && <Alert type="error" title="Application not found"><p>{error}</p></Alert>}<button className="primary-button" type="submit">View application status</button></form><aside className="sample-credentials"><p className="eyebrow">Safe sample lookup</p><h2>Try the journey</h2><p>Use reference <strong>UDID-42715</strong> with date of birth <strong>14 June 1992</strong>.</p><p>No applicant names or statuses are revealed until both values match.</p></aside></div>
+    <PageIntro title={intent === 'correction' ? 'Verify the application before making a correction' : intent === 'certificate' ? 'Verify the application before opening a certificate' : 'Track an application'}><p>Enter two matching details before any personal information or application status is shown.</p></PageIntro>
+    <div className="secure-lookup-grid"><form className="lookup-form" onSubmit={submit} noValidate><h2>Find your application</h2><div className="field"><label htmlFor="tracking-reference">Application reference</label><input id="tracking-reference" value={reference} onChange={(event) => { setReference(event.target.value); setError('') }} autoComplete="off" placeholder={`For example, ${sample.id}`} /></div><div className="field"><label htmlFor="tracking-dob">Applicant’s date of birth</label><input id="tracking-dob" type="date" value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); setError('') }} /></div>{error && <Alert type="error" title="Application not found"><p>{error}</p></Alert>}<button className="primary-button" type="submit">{intent === 'correction' ? 'Continue to correction' : intent === 'certificate' ? 'Open certificate' : 'View application status'}</button></form><aside className="sample-credentials"><p className="eyebrow">Safe sample lookup</p><h2>Try the journey</h2><p>Use reference <strong>{sample.id}</strong> with date of birth <strong>14 June 1992</strong>.</p><p>No applicant names or statuses are revealed until both values match.</p></aside></div>
   </div>
 }
 
 function ServiceTaskPage({ kind }: { kind: 'renew' | 'replace' }) {
-  const { scenarios } = useService()
+  const { scenarios, requestCardService } = useService()
   const [step, setStep] = useState(0)
   const [reference, setReference] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -136,21 +165,18 @@ function ServiceTaskPage({ kind }: { kind: 'renew' | 'replace' }) {
   const [addressConfirmed, setAddressConfirmed] = useState(false)
   const [error, setError] = useState('')
   const renewal = kind === 'renew'
-  const verified = (Object.values(scenarios)).find((app) => app.id.toUpperCase() === reference.trim().toUpperCase() && app.draft.dateOfBirth === dateOfBirth)
+  const verifiedEntry = (Object.entries(scenarios) as [ScenarioId, typeof scenarios[ScenarioId]][]).find(([, app]) => app.id.toUpperCase() === reference.trim().toUpperCase() && app.draft.dateOfBirth === dateOfBirth)
+  const verified = verifiedEntry?.[1]
   const verify = (event: FormEvent) => { event.preventDefault(); if (!verified) { setError('The reference and date of birth do not match.'); return } setError(''); setStep(1) }
-  const create = (event: FormEvent) => { event.preventDefault(); if (!reason || !addressConfirmed) { setError('Choose a reason and confirm the current address before continuing.'); return } setError(''); setStep(2) }
+  const create = (event: FormEvent) => { event.preventDefault(); if (!reason || !addressConfirmed || !verifiedEntry) { setError('Choose a reason and confirm the current address before continuing.'); return } requestCardService(verifiedEntry[0], renewal ? 'RENEWAL' : 'REPLACEMENT', reason); setError(''); setStep(2) }
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: renewal ? 'Renew' : 'Replace card' }]} />
     <PageIntro eyebrow={renewal ? 'Renewal service' : 'Replacement service'} title={renewal ? 'Renew your UDID card' : 'Replace a lost or damaged card'}><p>{renewal ? 'Start a renewal while keeping your existing application history.' : 'Request a replacement without completing the full application again.'}</p></PageIntro>
-    <ProgressMini current={step} labels={['Verify card', 'Request details', 'Confirmation']} />
+    <JourneyRibbon mode="application" heading={renewal ? 'Renewal journey' : 'Replacement journey'} stages={[{ id: 'verify', label: 'Verify card' }, { id: 'details', label: 'Request details' }, { id: 'confirmation', label: 'Confirmation' }]} currentStageId={['verify', 'details', 'confirmation'][step]} nextAction={step === 0 ? 'Verify the existing card securely' : step === 1 ? 'Choose a reason and confirm the address' : 'Follow the request from your dashboard'} saved="Existing history stays preserved" />
     {step === 0 && <form onSubmit={verify} className="service-wizard"><h2>Verify the existing card</h2><div className="field"><label htmlFor={`${kind}-reference`}>Application or UDID reference</label><input id={`${kind}-reference`} value={reference} onChange={(event) => { setReference(event.target.value); setError('') }} /></div><div className="field"><label htmlFor={`${kind}-dob`}>Card holder’s date of birth</label><input id={`${kind}-dob`} type="date" value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); setError('') }} /></div><p className="hint">Sample: UDID-53906 and 14 June 1992.</p>{error && <p className="field-error" role="alert">{error}</p>}<button className="primary-button">Verify and continue</button></form>}
     {step === 1 && verified && <form onSubmit={create} className="service-wizard"><Alert type="success" title="Existing record found"><p>{verified.applicantName} · {verified.id}. Existing application history will be preserved.</p></Alert><fieldset className="choice-group"><legend>{renewal ? 'Why is renewal needed?' : 'Why is a replacement needed?'}</legend>{(renewal ? ['Card validity is ending', 'Certificate details were updated', 'A renewal was requested by the service'] : ['Card was lost', 'Card was damaged', 'Card was not delivered']).map((item) => <label key={item}><input type="radio" name={`${kind}-reason`} checked={reason === item} onChange={() => { setReason(item); setError('') }} /> {item}</label>)}</fieldset><label className="consent-check"><input type="checkbox" checked={addressConfirmed} onChange={(event) => { setAddressConfirmed(event.target.checked); setError('') }} /><span><strong>Current address confirmed</strong><small>{verified.draft.address}, {verified.draft.state}</small></span></label>{error && <p className="field-error" role="alert">{error}</p>}<div className="button-row"><button type="button" className="secondary-button" onClick={() => setStep(0)}>Back</button><button className="primary-button">Submit request</button></div></form>}
     {step === 2 && <Alert type="success" title={`${renewal ? 'Renewal' : 'Replacement'} request submitted`}><p>Reference: <strong>{renewal ? 'RENEW-118' : 'REPLACE-226'}</strong>.</p><p>The request is linked to {reference.toUpperCase()}. You can keep this reference and follow updates from the dashboard.</p><Link to="/dashboard">Return to dashboard</Link></Alert>}
   </div>
-}
-
-function ProgressMini({ current, labels }: { current: number; labels: string[] }) {
-  return <ol className="mini-progress" aria-label="Request progress">{labels.map((label, index) => <li key={label} aria-current={index === current ? 'step' : undefined} className={index <= current ? 'active' : ''}><span>{index + 1}</span>{label}</li>)}</ol>
 }
 
 export const RenewPage = () => <ServiceTaskPage kind="renew" />
