@@ -43,7 +43,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link className="brand" to="/" aria-label="UDID Saathi home">
               <span className="brand-copy">
                 <span className="brand-title">UDID Saathi <span className="brand-hindi" lang="hi">/ साथी</span></span>
-                <small className="brand-context">Saathi Path · Accessible UDID services</small>
+                <small className="brand-context">Accessible UDID services</small>
               </span>
             </Link>
           </div>

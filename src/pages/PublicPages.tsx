@@ -6,39 +6,33 @@ import { useService } from '../state/ServiceContext'
 import { Alert, Breadcrumbs, PageIntro, TaskCard } from '../components/UI'
 import { IndiaServiceMap } from '../components/IndiaServiceMap'
 import { ServiceIcon } from '../components/ServiceIcon'
-import { SaathiIllustration } from '../components/SaathiIllustration'
 import { JourneyRibbon } from '../components/JourneyRibbon'
 
 export function HomePage() {
   return <>
-    <section className="home-intro">
+    <section className="home-intro home-photo-hero">
       <div className="container home-opening">
-        <div className="welcome-grid">
-          <div className="welcome-copy">
-            <p className="eyebrow">Namaste · UDID Saathi / साथी</p>
-            <h1>How can we help you today?</h1>
-            <p className="lead">Choose what has happened. Your Saathi Path keeps your place, explains the next step and helps you recover if something needs attention.</p>
-            <p className="welcome-support-link"><Link to="/apply?mode=caregiver">I am applying for someone else</Link></p>
-          </div>
-          <aside className="journey-glance saathi-illustration-panel" aria-label="How the Saathi Path helps">
-            <SaathiIllustration />
-          </aside>
+        <div className="welcome-copy">
+          <p className="eyebrow">Namaste · UDID Saathi / साथी</p>
+          <h1>Disability services that start with you</h1>
+          <p className="lead">Apply, track an application or fix a document through one clear and accessible service.</p>
+          <p className="welcome-support-link"><Link to="/apply?mode=caregiver">I am applying for someone else</Link></p>
         </div>
+      </div>
+    </section>
 
-        <section className="home-primary-tasks" aria-labelledby="primary-task-heading">
-          <div className="section-title-row home-task-heading"><div><p className="eyebrow">Choose your task</p><h2 id="primary-task-heading">Start with what you need now</h2></div><p>Each route uses plain language and shows what happens next.</p></div>
-          <div className="task-grid priority-task-grid">
-            <TaskCard icon="apply" to="/apply" title="Apply for a UDID card">See what you need and start one guided application.</TaskCard>
-            <TaskCard icon="track" to="/track" title="Track my application">See the latest update, your next action and who can help.</TaskCard>
-            <TaskCard icon="fix" to="/track?intent=correction" title="Fix my application">Replace only the document that needs attention. Everything else stays saved.</TaskCard>
-          </div>
-        </section>
+    <section className="container home-primary-tasks" aria-labelledby="primary-task-heading">
+      <div className="section-title-row home-task-heading"><div><p className="eyebrow">Choose your task</p><h2 id="primary-task-heading">Start with what you need now</h2></div><p>Each route uses plain language and shows what happens next.</p></div>
+      <div className="task-grid priority-task-grid">
+        <TaskCard icon="apply" to="/apply" title="Apply for a UDID card">See what you need and start one guided application.</TaskCard>
+        <TaskCard icon="track" to="/track" title="Track my application">See the latest update, your next action and who can help.</TaskCard>
+        <TaskCard icon="fix" to="/track?intent=correction" title="Fix my application">Replace only the document that needs attention. Everything else stays saved.</TaskCard>
       </div>
     </section>
 
     <div className="container page-section home-content-flow">
       <section className="guidance-strip home-guided-choice" aria-labelledby="unsure-heading">
-        <div><p className="eyebrow">Saathi can point the way</p><h2 id="unsure-heading">Not sure which service you need?</h2><p>Answer two plain-language questions. We will suggest a route without making an eligibility decision.</p></div>
+        <div><p className="eyebrow">Help choosing a service</p><h2 id="unsure-heading">Not sure which service you need?</h2><p>Answer two plain-language questions. We will suggest a route without making an eligibility decision.</p></div>
         <Link className="secondary-button" to="/start">Help me choose</Link>
       </section>
 
