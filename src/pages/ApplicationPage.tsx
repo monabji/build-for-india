@@ -121,6 +121,7 @@ export function ApplicationPage() {
         <form onSubmit={next} noValidate>
           {Object.keys(errors).length > 0 && <div id="error-summary" className="error-summary" role="alert" tabIndex={-1}><h2>Check the information below</h2><ul>{Object.entries(errors).map(([id, message]) => <li key={id}><a href={`#${id}`}>{message}</a></li>)}</ul></div>}
           {step === 'about' && <>
+            <figure className="journey-photo-card application-photo-card"><img src="/assets/service-application-documents.jpg" alt="Hands completing forms at a desk" /><figcaption><strong>Start with the information you have</strong><span>Keep your documents nearby. You can save this application and return later.</span></figcaption></figure>
             <h1>About the applicant</h1><p className="lead">Tell us who this application is for and how it is being completed.</p>
             <fieldset className="choice-group"><legend>Who is completing this application?</legend>
               <label><input type="radio" name="mode" checked={draft.mode === 'SELF'} onChange={() => update('mode', 'SELF')} /> I am applying for myself</label>

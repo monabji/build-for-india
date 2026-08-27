@@ -22,11 +22,18 @@ export function Alert({ type = 'info', title, children }: { type?: 'info' | 'suc
 
 export function StatusPanel({ application }: { application: ApplicationRecord }) {
   const actionRequired = application.currentStatus === 'CORRECTION_REQUIRED' || application.currentStatus === 'ASSESSMENT_SCHEDULED'
+  const statusImage = application.currentStatus === 'CORRECTION_REQUIRED'
+    ? '/assets/service-correction-path.jpg'
+    : application.currentStatus === 'ASSESSMENT_SCHEDULED'
+      ? '/assets/service-dashboard-consultation.jpg'
+      : '/assets/service-application-documents.jpg'
   return <section className="status-panel" aria-labelledby="status-heading">
-    <p className="status-kicker">Current status</p>
-    <h2 id="status-heading">{statusLabels[application.currentStatus]}</h2>
-    <p className="status-action"><strong>{actionRequired ? 'You need to act:' : 'What happens next:'}</strong> {application.currentNextAction}</p>
-    <p className="meta">Last updated {application.updatedAt}</p>
+    <div className="status-panel-copy"><p className="status-kicker">Current status</p>
+      <h2 id="status-heading">{statusLabels[application.currentStatus]}</h2>
+      <p className="status-action"><strong>{actionRequired ? 'You need to act:' : 'What happens next:'}</strong> {application.currentNextAction}</p>
+      <p className="meta">Last updated {application.updatedAt}</p>
+    </div>
+    <img className="status-panel-image" src={statusImage} alt="" />
   </section>
 }
 
