@@ -1,6 +1,8 @@
-# UDID service redesign
+# UDID Saathi — citizen service redesign
 
 An accessible, stateful citizen-service prototype built for the **Build What Moves India** hackathon. It redesigns the public-facing Unique Disability ID (UDID) journey around real user tasks: applying, tracking, correcting a rejected document, attending an assessment, renewing, replacing, and downloading a clearly labelled synthetic certificate.
+
+The v2 visual direction is deliberately independent of traditional government portal styling. It combines a warm Indian palette, a “Saathi” companion identity, calm progress feedback and an interactive India service map while retaining public-service clarity and accessibility.
 
 > Prototype using synthetic data. This is not an official government portal and is not connected to UDID, Aadhaar, medical authorities, notification providers, or government records.
 
@@ -33,6 +35,7 @@ npm run build
 - Renewal and replacement confirmations
 - Synthetic certificate preview and download
 - Demo medical-authority locator, help, FAQ and support case
+- Accessible interactive India map with map/list modes, keyboard selection and mobile fallback
 - Contextual simple-language and Hindi explanations using approved prototype content
 - Persistent larger-text and high-contrast preferences
 
