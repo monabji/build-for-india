@@ -9,7 +9,16 @@ export function PageIntro({ eyebrow, title, children }: { eyebrow?: string; titl
 }
 
 export function Breadcrumbs({ items }: { items: { label: string; to?: string }[] }) {
-  return <nav className="breadcrumbs" aria-label="Breadcrumb"><ol>{items.map((item, index) => <li key={item.label}>{item.to ? <Link to={item.to}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}{index < items.length - 1 && <span aria-hidden="true">›</span>}</li>)}</ol></nav>
+  const iconForLabel = (label: string): ServiceIconName | undefined => {
+    if (label === 'Home') return 'home'
+    if (label === 'Apply') return 'apply'
+    if (label.startsWith('Track')) return 'track'
+    if (label === 'Renew') return 'renew'
+    if (label === 'Replace card') return 'replace'
+    if (label === 'Find help') return 'help'
+    return undefined
+  }
+  return <nav className="breadcrumbs" aria-label="Breadcrumb"><ol>{items.map((item, index) => { const icon = iconForLabel(item.label); const content = <>{icon && <ServiceIcon name={icon} className="breadcrumb-icon" />}<span>{item.label}</span></>; return <li key={item.label}>{item.to ? <Link to={item.to}>{content}</Link> : <span aria-current="page">{content}</span>}{index < items.length - 1 && <span className="breadcrumb-separator" aria-hidden="true">›</span>}</li> })}</ol></nav>
 }
 
 export function TaskCard({ to, title, children, number, icon }: { to: string; title: string; children: ReactNode; number?: string; icon?: ServiceIconName }) {

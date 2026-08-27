@@ -1,9 +1,10 @@
-export type ServiceIconName = 'apply' | 'track' | 'fix' | 'renew' | 'replace' | 'certificate' | 'notice' | 'map' | 'help'
+export type ServiceIconName = 'home' | 'apply' | 'track' | 'fix' | 'renew' | 'replace' | 'certificate' | 'notice' | 'map' | 'help'
 
 export function ServiceIcon({ name, className = '' }: { name: ServiceIconName; className?: string }) {
   const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
   return <svg className={`service-icon ${className}`} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    {name === 'home' && <><path {...common} d="m4 10 8-6 8 6v9.5H4z" /><path {...common} d="M9 19.5v-5h6v5" /></>}
     {name === 'apply' && <><path {...common} d="M6 3.5h8l4 4V20.5H6z" /><path {...common} d="M14 3.5v4h4M9 12h6M9 16h4" /></>}
     {name === 'track' && <><circle {...common} cx="12" cy="12" r="8.5" /><path {...common} d="M12 7v5l3.5 2M4.5 5.5 7 3.5" /></>}
     {name === 'fix' && <><path {...common} d="M13.5 6.5 17.5 3a4 4 0 0 1-5 5L6 14.5 4 20l5.5-2 6.5-6.5" /><path {...common} d="m4.5 18.5 1 1" /></>}
