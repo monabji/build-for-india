@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { canTransition } from '../domain/rules'
+import { createSeedScenarios } from '../data/seed'
 import { demoServiceForTest } from './testUtils'
 
 describe('application state rules', () => {
@@ -51,5 +52,18 @@ describe('demo service transition contract', () => {
       actorLabel: 'Applicant',
     })
     expect(after.notifications[0].title).toBe('Replacement request received')
+  })
+
+  it('marks prepared documents as uploaded when a new application is submitted', () => {
+    const service = demoServiceForTest()
+    const draft = createSeedScenarios().new.draft
+    draft.identityDocument = 'prepared-identity.pdf'
+    draft.addressDocument = 'prepared-address.pdf'
+    const submitted = service.submitDraft(draft)
+
+    expect(submitted.documents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'IDENTITY', displayName: 'prepared-identity.pdf', status: 'UPLOADED', version: 1 }),
+      expect.objectContaining({ type: 'ADDRESS', displayName: 'prepared-address.pdf', status: 'UPLOADED', version: 1 }),
+    ]))
   })
 })

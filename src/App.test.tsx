@@ -44,6 +44,21 @@ describe('privacy-safe tracking journey', () => {
     expect(await screen.findByRole('heading', { name: 'Fix one document — keep everything else' })).toBeInTheDocument()
   })
 
+  it('downloads the clearly labelled sample certificate and confirms it', async () => {
+    const createObjectURL = vi.fn(() => 'blob:sample-certificate')
+    const revokeObjectURL = vi.fn()
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
+    renderRoute('/track')
+    fireEvent.click(screen.getByRole('button', { name: 'Try approved sample' }))
+    expect(await screen.findByRole('heading', { name: 'Your certificate' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Download certificate' }))
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(await screen.findByText('Sample certificate downloaded. This file is not an official government document.')).toBeInTheDocument()
+    click.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
   it('distinguishes missing tracking details from an unmatched lookup', async () => {
     renderRoute('/track')
     fireEvent.click(screen.getByRole('button', { name: 'View application status' }))
@@ -81,7 +96,7 @@ describe('route and form accessibility', () => {
   it('provides a linked error summary for keyboard users', async () => {
     renderRoute('/apply/about')
     fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }))
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    await waitFor(() => expect(screen.getByLabelText("Applicant's name")).toHaveFocus())
     expect(screen.getByRole('link', { name: 'Enter the applicant’s name.' })).toHaveAttribute('href', '#applicantName')
   })
 

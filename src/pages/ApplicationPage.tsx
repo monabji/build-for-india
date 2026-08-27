@@ -70,7 +70,7 @@ export function ApplicationPage() {
   const { loadDraft, saveDraft, submitDraft } = useService()
   const navigate = useNavigate()
   const initial = useMemo(() => {
-    const saved = loadDraft()
+    const saved = searchParams.get('resume') === 'true' ? loadDraft() : null
     const draft = saved ? { ...emptyDraft, ...saved } : { ...emptyDraft }
     const mode = searchParams.get('mode')
     if (mode === 'caregiver') draft.mode = 'CAREGIVER'
@@ -97,7 +97,7 @@ export function ApplicationPage() {
   const describedBy = (id: string, hint?: boolean) => [hint ? `${id}-hint` : '', errors[id] ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
 
   const saveOnly = () => {
-    saveDraft(draft, step)
+    saveDraft(draft, step, current > 0 ? steps[current - 1].id : '')
     navigate('/apply?saved=true')
   }
 
@@ -106,10 +106,10 @@ export function ApplicationPage() {
     const found = validate(step, draft)
     setErrors(found)
     if (Object.keys(found).length) {
-      requestAnimationFrame(() => document.getElementById('error-summary')?.focus())
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
       return
     }
-    saveDraft(draft, step === 'review' ? step : steps[current + 1].id)
+    saveDraft(draft, step === 'review' ? step : steps[current + 1].id, step)
     setSaveState('Saved on this device just now.')
     if (step === 'review') {
       submitDraft(draft)
@@ -170,7 +170,7 @@ export function ApplicationPage() {
           </div>
           <p className="save-state" role="status">{saveState}</p>
         </form>
-        {step === 'about' && <button className="demo-fill" type="button" onClick={() => { setDraft(demoDraft); setSaveState('Information added. Review it before continuing.') }}>Fill application details</button>}
+        {step === 'about' && <button className="demo-fill" type="button" onClick={() => { setDraft(demoDraft); setErrors({}); setSaveState('Information added. Review it before continuing.') }}>Fill application details</button>}
         <AssistantPanel context="application" />
       </div>
     </div>

@@ -5,6 +5,7 @@ import type { ApplicantDraft, ApplicationRecord, ApplicationStatus, ScenarioId, 
 const STORAGE_KEY = 'udid-redesign-demo-v1'
 const DRAFT_KEY = 'udid-redesign-draft-v1'
 const DRAFT_STEP_KEY = 'udid-redesign-draft-step-v1'
+const DRAFT_COMPLETED_STEP_KEY = 'udid-redesign-draft-completed-step-v1'
 
 function nowLabel() {
   return new Intl.DateTimeFormat('en-IN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date())
@@ -26,9 +27,10 @@ export class DemoService {
 
   getApplication(id: ScenarioId) { return structuredClone(this.scenarios[id]) }
 
-  saveDraft(draft: ApplicantDraft, step = 'about') {
+  saveDraft(draft: ApplicantDraft, step = 'about', completedStep = '') {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
     localStorage.setItem(DRAFT_STEP_KEY, step)
+    localStorage.setItem(DRAFT_COMPLETED_STEP_KEY, completedStep)
     return structuredClone(draft)
   }
 
@@ -42,6 +44,10 @@ export class DemoService {
     return localStorage.getItem(DRAFT_STEP_KEY) || 'about'
   }
 
+  loadDraftCompletedStep() {
+    return localStorage.getItem(DRAFT_COMPLETED_STEP_KEY) || ''
+  }
+
   submitDraft(draft: ApplicantDraft) {
     if (this.scenarios.new.currentStatus !== 'DRAFT') {
       this.scenarios.new = createSeedScenarios().new
@@ -50,10 +56,16 @@ export class DemoService {
     record.applicantName = draft.applicantName
     record.draft = structuredClone(draft)
     record.mode = draft.mode
+    const submittedAt = nowLabel()
+    record.documents = record.documents.map((document) => {
+      const fileName = document.type === 'IDENTITY' ? draft.identityDocument : draft.addressDocument
+      return fileName ? { ...document, displayName: fileName, status: 'UPLOADED', version: 1, uploadedAt: submittedAt } : document
+    })
     this.transition('new', 'SUBMITTED', 'Application submitted', 'Your application has been received.', 'Document review will begin next.')
     record.completionPercent = 100
     localStorage.removeItem(DRAFT_KEY)
     localStorage.removeItem(DRAFT_STEP_KEY)
+    localStorage.removeItem(DRAFT_COMPLETED_STEP_KEY)
     this.persist()
     return structuredClone(record)
   }
@@ -138,6 +150,7 @@ export class DemoService {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(DRAFT_KEY)
     localStorage.removeItem(DRAFT_STEP_KEY)
+    localStorage.removeItem(DRAFT_COMPLETED_STEP_KEY)
     this.persist()
     return this.listScenarios()
   }

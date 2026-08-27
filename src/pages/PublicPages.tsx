@@ -29,6 +29,7 @@ export function HomePage() {
         <TaskCard icon="track" to="/track" title="Track my application">See the latest update, your next action and who can help.</TaskCard>
         <TaskCard icon="fix" to="/track?intent=correction" title="Fix my application">Replace only the document that needs attention. Everything else stays saved.</TaskCard>
       </div>
+      <section className="demo-callout" aria-labelledby="demo-callout-heading"><div><p className="eyebrow">Two-minute walkthrough</p><h2 id="demo-callout-heading">See the complete Saathi journey</h2><p>Try a sample appointment, correct one rejected document, or open a sample certificate from a clean starting point.</p></div><Link className="secondary-button" to="/track">Run the 2-minute demo</Link></section>
     </section>
 
     <section className="container problem-evidence" aria-labelledby="problem-evidence-heading">
@@ -165,7 +166,7 @@ export function TrackPage() {
     if (!dateOfBirth) required.dateOfBirth = 'Enter the applicant’s date of birth.'
     if (Object.keys(required).length) {
       setErrors(required)
-      requestAnimationFrame(() => document.getElementById('tracking-error-summary')?.focus())
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
       return
     }
     const match = (Object.entries(scenarios) as [ScenarioId, typeof scenarios[ScenarioId]][]).find(([, app]) => app.id.toUpperCase() === reference.trim().toUpperCase() && app.draft.dateOfBirth === dateOfBirth)
@@ -230,7 +231,7 @@ export function HelpPage() {
   const [message, setMessage] = useState('')
   const [supportErrors, setSupportErrors] = useState<Record<string, string>>({})
   const clearSupportError = (field: string) => setSupportErrors((currentErrors) => { if (!currentErrors[field]) return currentErrors; const remaining = { ...currentErrors }; delete remaining[field]; return remaining })
-  const submitSupport = (event: FormEvent) => { event.preventDefault(); const errors: Record<string, string> = {}; if (!category) errors.category = 'Choose a help topic.'; if (!contact.trim()) errors.contact = 'Enter an email address or mobile number for a reply.'; if (message.trim().length < 20) errors.message = 'Describe the problem in at least 20 characters.'; if (Object.keys(errors).length) { setSupportErrors(errors); requestAnimationFrame(() => document.getElementById('support-error-summary')?.focus()); return } setSupportErrors({}); setCaseReference(`HELP-${String(Date.now()).slice(-6)}`) }
+  const submitSupport = (event: FormEvent) => { event.preventDefault(); const errors: Record<string, string> = {}; if (!category) errors.category = 'Choose a help topic.'; if (!contact.trim()) errors.contact = 'Enter an email address or mobile number for a reply.'; if (message.trim().length < 20) errors.message = 'Describe the problem in at least 20 characters.'; if (Object.keys(errors).length) { setSupportErrors(errors); requestAnimationFrame(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return } setSupportErrors({}); setCaseReference(`HELP-${String(Date.now()).slice(-6)}`) }
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Help and FAQs' }]} />
     <PageIntro title="Help with your UDID journey"><p>Plain-language answers and a support route when an answer is not enough.</p></PageIntro>

@@ -23,13 +23,15 @@ export function Shell({ children }: { children: ReactNode }) {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 })
     document.getElementById('main-content')?.focus({ preventScroll: true })
+    const section = location.pathname.startsWith('/apply') ? 'Apply' : location.pathname.startsWith('/track') ? 'Track' : location.pathname.startsWith('/renew') ? 'Renew' : location.pathname.startsWith('/replace') ? 'Replace' : location.pathname.startsWith('/find-help') ? 'Find help' : location.pathname.startsWith('/help') ? 'Help' : location.pathname.startsWith('/documents') ? 'Sample certificate' : location.pathname === '/' ? 'Home' : 'UDID Saathi'
+    document.title = `${section} · UDID Saathi`
   }, [location.pathname])
 
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="prototype-bar" id="prototype-disclosure" role="note">
-        <div className="container"><strong>Independent prototype · Synthetic data.</strong> No live government connection. No data is submitted.</div>
+        <div className="container"><strong>Independent prototype · Synthetic data.</strong> No live government connection. No data is submitted. Unofficial and unaffiliated.</div>
       </div>
       <header className={`site-header ${isJourneyRoute ? 'site-header--journey' : 'site-header--public'}`} aria-describedby="prototype-disclosure">
         <div className="utility container" aria-label="Accessibility options">

@@ -8,7 +8,7 @@ interface ServiceContextValue {
   verifiedScenario: ScenarioId | null
   setActiveScenario: (id: ScenarioId) => void
   verifyScenario: (id: ScenarioId) => void
-  saveDraft: (draft: ApplicantDraft, step?: string) => ApplicantDraft
+  saveDraft: (draft: ApplicantDraft, step?: string, completedStep?: string) => ApplicantDraft
   loadDraft: () => ApplicantDraft | null
   loadDraftStep: () => string
   submitDraft: (draft: ApplicantDraft) => ApplicationRecord
@@ -33,7 +33,7 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
     verifiedScenario,
     setActiveScenario,
     verifyScenario: (id) => { setActiveScenario(id); setVerifiedScenario(id) },
-    saveDraft: (draft, step) => service.saveDraft(draft, step),
+    saveDraft: (draft, step, completedStep) => service.saveDraft(draft, step, completedStep),
     loadDraft: () => service.loadDraft(),
     loadDraftStep: () => service.loadDraftStep(),
     submitDraft: (draft) => { const app = service.submitDraft(draft); refresh(); setActiveScenario('new'); setVerifiedScenario('new'); return app },
