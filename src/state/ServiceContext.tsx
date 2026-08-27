@@ -9,8 +9,8 @@ interface ServiceContextValue {
   saveDraft: (draft: ApplicantDraft) => ApplicantDraft
   loadDraft: () => ApplicantDraft | null
   submitDraft: (draft: ApplicantDraft) => ApplicationRecord
-  correctDocument: (fileName: string) => ApplicationRecord
-  reschedule: (date: string, time: string) => ApplicationRecord
+  correctDocument: (id: ScenarioId, fileName: string) => ApplicationRecord
+  reschedule: (id: ScenarioId, date: string, time: string) => ApplicationRecord
   reset: () => void
 }
 
@@ -29,8 +29,8 @@ export function ServiceProvider({ children }: { children: ReactNode }) {
     saveDraft: (draft) => service.saveDraft(draft),
     loadDraft: () => service.loadDraft(),
     submitDraft: (draft) => { const app = service.submitDraft(draft); refresh(); setActiveScenario('new'); return app },
-    correctDocument: (fileName) => { const app = service.correctDocument('correction', fileName); refresh(); return app },
-    reschedule: (date, time) => { const app = service.rescheduleAppointment(activeScenario, date, time); refresh(); return app },
+    correctDocument: (id, fileName) => { const app = service.correctDocument(id, fileName); refresh(); return app },
+    reschedule: (id, date, time) => { const app = service.rescheduleAppointment(id, date, time); refresh(); return app },
     reset: () => { setScenarios(service.reset()); setActiveScenario('appointment') },
   }
 

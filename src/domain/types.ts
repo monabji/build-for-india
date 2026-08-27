@@ -94,7 +94,8 @@ export interface Authority {
   address: string
   accessNotes: string
   contactLabel: string
+  hours: string
+  coordinates: [number, number]
 }
 
 export type ScenarioId = 'new' | 'correction' | 'appointment' | 'approved'
-

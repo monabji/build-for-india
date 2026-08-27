@@ -1,4 +1,4 @@
-import type { ApplicantDraft, ApplicationRecord, Authority, ScenarioId, StatusEvent } from '../domain/types'
+import type { ApplicantDraft, ApplicationRecord, ScenarioId, StatusEvent } from '../domain/types'
 
 const baseDraft = (name: string): ApplicantDraft => ({
   mode: 'SELF',
@@ -14,7 +14,7 @@ const baseDraft = (name: string): ApplicantDraft => ({
   supportNeeds: 'Step-free access requested',
   identityDocument: 'Identity proof.pdf',
   addressDocument: 'Address proof.pdf',
-  authorityId: 'auth-1',
+  authorityId: 'centre-maharashtra',
   consent: true,
 })
 
@@ -37,35 +37,7 @@ const event = (
   nextAction,
 })
 
-export const authorities: Authority[] = [
-  {
-    id: 'auth-1',
-    name: 'District Medical Centre — Central',
-    district: 'Central District',
-    state: 'Maharashtra',
-    address: '12 Service Road, Central, 400001',
-    accessNotes: 'Step-free entrance, accessible toilet and sign-language support by request.',
-    contactLabel: 'Contact support for assistance',
-  },
-  {
-    id: 'auth-2',
-    name: 'Community Assessment Centre — North',
-    district: 'North District',
-    state: 'Delhi',
-    address: '8 Citizen Avenue, North District, 110001',
-    accessNotes: 'Ramp access, quiet waiting area and wheelchair available.',
-    contactLabel: 'Contact support for assistance',
-  },
-  {
-    id: 'auth-3',
-    name: 'Regional Medical Board — East',
-    district: 'East District',
-    state: 'West Bengal',
-    address: '25 Public Service Lane, East District, 700001',
-    accessNotes: 'Lift access and an assisted-service desk near reception.',
-    contactLabel: 'Contact support for assistance',
-  },
-]
+export { authorities } from './centres'
 
 export const createSeedScenarios = (): Record<ScenarioId, ApplicationRecord> => {
   const newDraft = baseDraft('Anita Sharma')
@@ -113,7 +85,7 @@ export const createSeedScenarios = (): Record<ScenarioId, ApplicationRecord> => 
         { id: 'doc-appt-id', type: 'IDENTITY', displayName: 'Identity proof', status: 'ACCEPTED', version: 1, uploadedAt: '16 August 2026' },
         { id: 'doc-appt-address', type: 'ADDRESS', displayName: 'Address proof', status: 'ACCEPTED', version: 1, uploadedAt: '16 August 2026' },
       ],
-      appointment: { id: 'APT-104', date: '4 September 2026', time: '10:30 AM', locationName: 'District Medical Centre — Central', address: '12 Service Road, Central, 400001', accessNotes: 'Step-free entrance. Arrive 20 minutes early.', status: 'UPCOMING' },
+      appointment: { id: 'APT-104', date: '4 September 2026', time: '10:30 AM', locationName: 'Mumbai assessment and service centre', address: 'District Citizen Services Campus, Mumbai', accessNotes: 'Step-free entrance. Arrive 20 minutes early.', status: 'UPCOMING' },
       timeline: [
         event('apt-3', 'ASSESSMENT_SCHEDULED', 'Medical assessment scheduled', 'An appointment has been added to this application.', '25 August 2026, 10:30', true, 'Attend the appointment on 4 September at 10:30 AM.'),
         event('apt-2', 'DOCUMENT_REVIEW', 'Documents checked', 'The submitted documents passed review.', '22 August 2026, 15:40'),

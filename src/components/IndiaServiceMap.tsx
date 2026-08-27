@@ -1,55 +1,14 @@
-import { geoCentroid, geoMercator, geoPath } from 'd3-geo'
+import { geoMercator, geoPath } from 'd3-geo'
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import { ServiceIcon } from './ServiceIcon'
+import { centresByState } from '../data/centres'
+import type { Authority } from '../domain/types'
 
 type StateProperties = { shapeName: string; shapeType?: string }
 type StateFeature = Feature<Geometry, StateProperties>
 type MapData = FeatureCollection<Geometry, StateProperties>
-type Centre = {
-  id: string
-  name: string
-  district: string
-  address: string
-  hours: string
-  access: string
-  coordinates: [number, number]
-}
-
-const namedCentres: Record<string, Centre[]> = {
-  Maharashtra: [
-    { id: 'mh-mumbai', name: 'Mumbai district service centre', district: 'Mumbai', address: 'Civic Services Complex, Mumbai', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Step-free entrance and an assisted-service desk.', coordinates: [72.8777, 19.076] },
-    { id: 'mh-pune', name: 'Pune assessment support centre', district: 'Pune', address: 'District Services Campus, Pune', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and a quiet waiting area.', coordinates: [73.8567, 18.5204] },
-    { id: 'mh-nagpur', name: 'Nagpur regional service desk', district: 'Nagpur', address: 'Regional Citizen Centre, Nagpur', hours: 'Monday–Saturday, 10:00 AM–4:30 PM', access: 'Wheelchair access and priority seating.', coordinates: [79.0882, 21.1458] },
-  ],
-  Delhi: [
-    { id: 'dl-central', name: 'Central Delhi service centre', district: 'Central Delhi', address: 'Citizen Services Building, New Delhi', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Ramp access, wheelchair and assisted-service desk.', coordinates: [77.209, 28.6139] },
-  ],
-  'West Bengal': [
-    { id: 'wb-kolkata', name: 'Kolkata regional medical board', district: 'Kolkata', address: 'Regional Services Campus, Kolkata', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and guided assistance at reception.', coordinates: [88.3639, 22.5726] },
-    { id: 'wb-siliguri', name: 'Siliguri district support centre', district: 'Darjeeling', address: 'District Citizen Centre, Siliguri', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Step-free entry and accessible toilet.', coordinates: [88.3953, 26.7271] },
-  ],
-  Karnataka: [
-    { id: 'ka-bengaluru', name: 'Bengaluru assessment centre', district: 'Bengaluru Urban', address: 'District Services Hub, Bengaluru', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Lift access and sign-language support by request.', coordinates: [77.5946, 12.9716] },
-    { id: 'ka-mysuru', name: 'Mysuru district service desk', district: 'Mysuru', address: 'Citizen Services Campus, Mysuru', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Step-free entrance and priority seating.', coordinates: [76.6394, 12.2958] },
-  ],
-  Telangana: [
-    { id: 'tg-hyderabad', name: 'Hyderabad service centre', district: 'Hyderabad', address: 'District Services Complex, Hyderabad', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Ramp access and assisted digital support.', coordinates: [78.4867, 17.385] },
-  ],
-  'Tamil Nadu': [
-    { id: 'tn-chennai', name: 'Chennai regional service centre', district: 'Chennai', address: 'Regional Citizen Campus, Chennai', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and accessible waiting area.', coordinates: [80.2707, 13.0827] },
-    { id: 'tn-madurai', name: 'Madurai district support centre', district: 'Madurai', address: 'District Services Building, Madurai', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Step-free entrance and wheelchair available.', coordinates: [78.1198, 9.9252] },
-  ],
-  Assam: [
-    { id: 'as-guwahati', name: 'Guwahati regional service centre', district: 'Kamrup Metropolitan', address: 'Regional Services Campus, Guwahati', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Ramp access and assisted-service desk.', coordinates: [91.7362, 26.1445] },
-  ],
-  'Uttar Pradesh': [
-    { id: 'up-lucknow', name: 'Lucknow state service centre', district: 'Lucknow', address: 'State Citizen Services Campus, Lucknow', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Step-free route and accessible toilet.', coordinates: [80.9462, 26.8467] },
-    { id: 'up-varanasi', name: 'Varanasi district support centre', district: 'Varanasi', address: 'District Services Complex, Varanasi', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Ramp access and priority seating.', coordinates: [82.9739, 25.3176] },
-  ],
-}
-
 const regionByState: Record<string, string> = {
   Delhi: 'North', Haryana: 'North', 'Himachal Pradesh': 'North', 'Jammu and Kashmir': 'North', Ladakh: 'North', Punjab: 'North', Rajasthan: 'North', Uttarakhand: 'North', 'Uttar Pradesh': 'North', Chandigarh: 'North',
   Bihar: 'East', Jharkhand: 'East', Odisha: 'East', 'West Bengal': 'East',
@@ -81,27 +40,14 @@ function rewindForD3(data: MapData): MapData {
 }
 
 function centreCount(stateName: string) {
-  return namedCentres[stateName]?.length ?? 3 + (stateName.length % 8)
-}
-
-function fallbackCentre(feature: StateFeature): Centre {
-  const stateName = canonicalName(feature.properties.shapeName)
-  return {
-    id: `${stateName.toLowerCase().replace(/[^a-z]+/g, '-')}-featured`,
-    name: `${stateName} service desk`,
-    district: 'Featured state location',
-    address: 'Choose “View all centres” for district-level location details.',
-    hours: 'Hours are shown when you choose an appointment.',
-    access: 'Contact the centre before visiting to confirm the support you need.',
-    coordinates: geoCentroid(feature) as [number, number],
-  }
+  return centresByState(stateName).length
 }
 
 export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
   const [mapData, setMapData] = useState<MapData | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [selectedName, setSelectedName] = useState<string | null>(null)
-  const [selectedCentre, setSelectedCentre] = useState<Centre | null>(null)
+  const [selectedCentre, setSelectedCentre] = useState<Authority | null>(null)
   const [view, setView] = useState<'map' | 'list'>('map')
   const [announcement, setAnnouncement] = useState('Choose a state or union territory to see nearby centres.')
 
@@ -121,7 +67,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
 
   const features = useMemo(() => mapData?.features.slice().sort((a, b) => canonicalName(a.properties.shapeName).localeCompare(canonicalName(b.properties.shapeName))) ?? [], [mapData])
   const selectedFeature = useMemo(() => features.find((feature) => canonicalName(feature.properties.shapeName) === selectedName) ?? null, [features, selectedName])
-  const centres = useMemo(() => selectedFeature ? (namedCentres[selectedName ?? ''] ?? [fallbackCentre(selectedFeature)]) : [], [selectedFeature, selectedName])
+  const centres = useMemo(() => selectedFeature ? centresByState(selectedName ?? '') : [], [selectedFeature, selectedName])
 
   const { path, projection } = useMemo(() => {
     if (!mapData) return { path: null, projection: null }
@@ -140,11 +86,11 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
 
   const choose = (feature: StateFeature) => {
     const name = canonicalName(feature.properties.shapeName)
-    const available = namedCentres[name] ?? [fallbackCentre(feature)]
+    const available = centresByState(name)
     setSelectedName(name)
-    setSelectedCentre(available[0])
+    setSelectedCentre(available[0] ?? null)
     setView('map')
-    setAnnouncement(`${name} selected. ${centreCount(name)} centres available. ${available[0].name} highlighted.`)
+    setAnnouncement(`${name} selected. ${centreCount(name)} centre available. ${available[0]?.name ?? ''} highlighted.`)
   }
 
   const resetMap = () => {
@@ -189,7 +135,8 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
             {features.map((feature) => {
               const name = canonicalName(feature.properties.shapeName)
               const isSelected = name === selectedName
-              return <g key={name} className={`state-shape ${isSelected ? 'selected' : ''} ${selectedName && !isSelected ? 'muted' : ''}`} role="button" tabIndex={0} aria-label={`${name}, ${centreCount(name)} centres`} aria-current={isSelected ? 'true' : undefined} onClick={() => choose(feature)} onKeyDown={(event) => activateState(event, feature)}>
+              const count = centreCount(name)
+              return <g key={name} className={`state-shape ${isSelected ? 'selected' : ''} ${selectedName && !isSelected ? 'muted' : ''}`} role="button" tabIndex={0} aria-label={`${name}, ${count} ${count === 1 ? 'centre' : 'centres'}`} aria-current={isSelected ? 'true' : undefined} onClick={() => choose(feature)} onKeyDown={(event) => activateState(event, feature)}>
                 <path d={path(feature) ?? ''} vectorEffect="non-scaling-stroke" />
               </g>
             })}
@@ -204,15 +151,15 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
           </g>
         </svg>}
         <p className="map-note">36 states and union territories · click a boundary to explore</p>
-      </div> : <div className="state-list" aria-label="States and union territories">{features.map((feature) => { const name = canonicalName(feature.properties.shapeName); return <button key={name} type="button" className={selectedName === name ? 'selected' : ''} aria-pressed={selectedName === name} onClick={() => choose(feature)}><span><strong>{name}</strong><small>{regionByState[name] ?? 'India'} region</small></span><span>{centreCount(name)} centres</span></button> })}</div>}
+      </div> : <div className="state-list" aria-label="States and union territories">{features.map((feature) => { const name = canonicalName(feature.properties.shapeName); const count = centreCount(name); return <button key={name} type="button" className={selectedName === name ? 'selected' : ''} aria-pressed={selectedName === name} onClick={() => choose(feature)}><span><strong>{name}</strong><small>{regionByState[name] ?? 'India'} region</small></span><span>{count} {count === 1 ? 'centre' : 'centres'}</span></button> })}</div>}
       <aside className={`state-result ${selectedName ? 'has-selection' : ''}`} aria-live="polite">
         {!selectedName ? <div className="map-prompt"><ServiceIcon name="map" /><p className="result-region">Explore by location</p><h3>Choose a state</h3><p>Click the map or use the accessible state list. Centre markers and visit information will appear here.</p></div> : <>
           <p className="result-region">{regionByState[selectedName] ?? 'India'} region</p>
           <h3>{selectedName}</h3>
-          <p className="centre-count"><strong>{centreCount(selectedName)}</strong> service centres</p>
+          <p className="centre-count"><strong>{centreCount(selectedName)}</strong> service {centreCount(selectedName) === 1 ? 'centre' : 'centres'}</p>
           <p className="result-language"><strong>Service languages:</strong> {languageByState[selectedName] ?? 'Regional language, Hindi and English'}</p>
           <div className="centre-selector" aria-label={`Featured centres in ${selectedName}`}>{centres.map((centre) => <button key={centre.id} type="button" className={selectedCentre?.id === centre.id ? 'active' : ''} aria-pressed={selectedCentre?.id === centre.id} onClick={() => setSelectedCentre(centre)}><span aria-hidden="true">●</span>{centre.name}</button>)}</div>
-          {selectedCentre && <article className="centre-detail" key={selectedCentre.id}><p className="centre-district">{selectedCentre.district}</p><h4>{selectedCentre.name}</h4><dl><div><dt>Location</dt><dd>{selectedCentre.address}</dd></div><div><dt>Visiting hours</dt><dd>{selectedCentre.hours}</dd></div><div><dt>Accessibility</dt><dd>{selectedCentre.access}</dd></div></dl></article>}
+          {selectedCentre && <article className="centre-detail" key={selectedCentre.id}><p className="centre-district">{selectedCentre.district}</p><h4>{selectedCentre.name}</h4><dl><div><dt>Location</dt><dd>{selectedCentre.address}</dd></div><div><dt>Visiting hours</dt><dd>{selectedCentre.hours}</dd></div><div><dt>Accessibility</dt><dd>{selectedCentre.accessNotes}</dd></div></dl></article>}
           <Link className="primary-button" to={`/find-help?state=${encodeURIComponent(selectedName)}`}>View all centres in {selectedName}</Link>
         </>}
       </aside>

@@ -1,9 +1,11 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { authorities, emptyDraft } from '../data/seed'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { emptyDraft } from '../data/seed'
+import { authorities, stateNames } from '../data/centres'
 import type { ApplicantDraft } from '../domain/types'
 import { useService } from '../state/ServiceContext'
 import { Alert, AssistantPanel, Breadcrumbs, ProgressSteps } from '../components/UI'
+import { readUpload, validateUpload } from '../domain/uploads'
 
 const steps = [
   { id: 'about', label: 'About the applicant' },
@@ -20,7 +22,7 @@ const demoDraft: ApplicantDraft = {
   address: '18 Sample Street, Central Ward', district: 'Central District', state: 'Maharashtra',
   caregiverName: 'Kavita Kumar', relationship: 'Parent', disabilityCategory: 'Locomotor disability',
   supportNeeds: 'Step-free access and a quiet waiting area', identityDocument: 'identity-proof.pdf',
-  addressDocument: 'address-proof.pdf', authorityId: 'auth-1', consent: true,
+  addressDocument: 'address-proof.pdf', authorityId: 'centre-maharashtra', consent: true,
 }
 
 type Errors = Record<string, string>
@@ -67,7 +69,9 @@ export function ApplicationPage() {
   const [draft, setDraft] = useState<ApplicantDraft>(initial)
   const [errors, setErrors] = useState<Errors>({})
   const [saveState, setSaveState] = useState('')
-  const current = Math.max(0, steps.findIndex((item) => item.id === step))
+  const current = steps.findIndex((item) => item.id === step)
+
+  if (current < 0) return <Navigate to="/apply/about" replace />
 
   const update = <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => setDraft((state) => ({ ...state, [key]: value }))
   const describedBy = (id: string, hint?: boolean) => [hint ? `${id}-hint` : '', errors[id] ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
@@ -118,7 +122,7 @@ export function ApplicationPage() {
           {step === 'identity' && <>
             <h1>Identity and address</h1><p className="lead">We do not ask for Aadhaar, PAN or identity numbers.</p>
             <TextField id="address" label="Address" value={draft.address} onChange={(value) => update('address', value)} error={errors.address} describedBy={describedBy('address')} multiline />
-            <div className="field-row"><TextField id="district" label="District" value={draft.district} onChange={(value) => update('district', value)} error={errors.district} describedBy={describedBy('district')} /><div className="field"><label htmlFor="state">State</label><select id="state" value={draft.state} onChange={(e) => update('state', e.target.value)} aria-invalid={!!errors.state} aria-describedby={describedBy('state')}><option value="">Choose a state</option><option>Maharashtra</option><option>Delhi</option><option>West Bengal</option><option>Karnataka</option></select>{errors.state && <span id="state-error" className="field-error">{errors.state}</span>}</div></div>
+            <div className="field-row"><TextField id="district" label="District" value={draft.district} onChange={(value) => update('district', value)} error={errors.district} describedBy={describedBy('district')} /><div className="field"><label htmlFor="state">State or union territory</label><select id="state" value={draft.state} onChange={(e) => setDraft((currentDraft) => ({ ...currentDraft, state: e.target.value, authorityId: '' }))} aria-invalid={!!errors.state} aria-describedby={describedBy('state')}><option value="">Choose a state or union territory</option>{stateNames.map((stateName) => <option key={stateName}>{stateName}</option>)}</select>{errors.state && <span id="state-error" className="field-error">{errors.state}</span>}</div></div>
           </>}
           {step === 'caregiver' && <>
             <h1>{draft.mode === 'SELF' ? 'Caregiver details' : 'About the person helping'}</h1>
@@ -136,7 +140,7 @@ export function ApplicationPage() {
           </>}
           {step === 'authority' && <>
             <h1>Choose a medical authority</h1><p className="lead">Choose a centre that works for you.</p>
-            <fieldset className="authority-choices"><legend>Preferred centre</legend>{authorities.map((authority) => <label key={authority.id} className={draft.authorityId === authority.id ? 'selected' : ''}><input type="radio" name="authority" checked={draft.authorityId === authority.id} onChange={() => update('authorityId', authority.id)} /><span><strong>{authority.name}</strong><small>{authority.address}</small><small><b>Accessibility:</b> {authority.accessNotes}</small></span></label>)}{errors.authorityId && <span className="field-error">{errors.authorityId}</span>}</fieldset>
+            {!draft.state ? <Alert type="warning" title="Choose your state first"><p>Return to Identity and address so we can show the relevant centre.</p><Link to="/apply/identity">Choose state or union territory</Link></Alert> : <fieldset className="authority-choices"><legend>Preferred centre in {draft.state}</legend>{authorities.filter((authority) => authority.state === draft.state).map((authority) => <label key={authority.id} className={draft.authorityId === authority.id ? 'selected' : ''}><input type="radio" name="authority" checked={draft.authorityId === authority.id} onChange={() => update('authorityId', authority.id)} /><span><strong>{authority.name}</strong><small>{authority.address}</small><small><b>Accessibility:</b> {authority.accessNotes}</small></span></label>)}{errors.authorityId && <span className="field-error">{errors.authorityId}</span>}</fieldset>}
           </>}
           {step === 'review' && <Review draft={draft} errors={errors} update={update} />}
           <div className="form-actions">
@@ -158,8 +162,30 @@ function TextField({ id, label, value, onChange, error, hint, describedBy, multi
   return <div className="field"><label htmlFor={id}>{label}</label>{hint && <span id={`${id}-hint`} className="hint">{hint}</span>}{multiline ? <textarea {...props} rows={3} /> : <input {...props} />}{error && <span id={`${id}-error`} className="field-error">{error}</span>}</div>
 }
 
-function FileField({ id, label, value, onChange, error }: { id: string; label: string; value: string; onChange: (value: string) => void; error?: string }) {
-  return <div className="file-field"><label htmlFor={id}>{label}</label><p className="hint">PDF, JPG or PNG · maximum 2 MB.</p><input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onChange(e.target.files?.[0]?.name || '')} aria-invalid={!!error} />{value && <p className="file-selected"><strong>Selected:</strong> {value}</p>}{error && <span className="field-error">{error}</span>}<button type="button" className="text-button" onClick={() => onChange(id === 'identityDocument' ? 'identity-proof.pdf' : 'address-proof.pdf')}>Use suggested filename</button></div>
+export function FileField({ id, label, value, onChange, error }: { id: string; label: string; value: string; onChange: (value: string) => void; error?: string }) {
+  const [uploadError, setUploadError] = useState('')
+  const [progress, setProgress] = useState(value ? 100 : 0)
+  const [lastFile, setLastFile] = useState<File | null>(null)
+
+  const process = async (file: File) => {
+    setLastFile(file)
+    setUploadError('')
+    onChange('')
+    const validationError = validateUpload(file)
+    if (validationError) { setUploadError(validationError); setProgress(0); return }
+    setProgress(35)
+    try {
+      await readUpload(file)
+      setProgress(100)
+      onChange(file.name)
+    } catch {
+      setProgress(0)
+      setUploadError('The file could not be read. Check it and try again.')
+    }
+  }
+
+  const selectedError = uploadError || error
+  return <div className="file-field"><label htmlFor={id}>{label}</label><p id={`${id}-requirements`} className="hint">Accepted: PDF, JPG or PNG · maximum 2 MB · make sure all text and edges are visible.</p><input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => { const file = e.target.files?.[0]; if (file) void process(file) }} aria-invalid={!!selectedError} aria-describedby={`${id}-requirements${selectedError ? ` ${id}-error` : ''}`} />{progress > 0 && progress < 100 && <div className="upload-progress" role="status"><span>Checking file…</span><progress max="100" value={progress} /></div>}{value && progress === 100 && <p className="file-selected" role="status"><strong>Ready:</strong> {value}</p>}{selectedError && <p id={`${id}-error`} className="field-error" role="alert">{selectedError}</p>}{uploadError && lastFile && <button type="button" className="text-button" onClick={() => void process(lastFile)}>Try this file again</button>}<button type="button" className="text-button" onClick={() => { setUploadError(''); setProgress(100); onChange(id === 'identityDocument' ? 'identity-proof.pdf' : 'address-proof.pdf') }}>Use prepared sample document</button></div>
 }
 
 function Review({ draft, errors, update }: { draft: ApplicantDraft; errors: Errors; update: <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => void }) {
@@ -179,6 +205,7 @@ export function ConfirmationPage() {
   const { scenarios, setActiveScenario } = useService()
   const navigate = useNavigate()
   const app = scenarios.new
+  if (app.currentStatus === 'DRAFT') return <Navigate to="/apply" replace />
   const goDashboard = () => { setActiveScenario('new'); navigate('/dashboard') }
   return <div className="container narrow page-section"><Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Application complete' }]} /><section className="confirmation-panel"><p className="confirmation-icon" aria-hidden="true">✓</p><p className="eyebrow">Application received</p><h1>Your application has been submitted</h1><p>You can now follow its progress from your dashboard.</p><dl><div><dt>Application ID</dt><dd>{app.id}</dd></div><div><dt>Applicant</dt><dd>{app.applicantName}</dd></div><div><dt>Next step</dt><dd>{app.currentNextAction}</dd></div></dl><button className="primary-button" onClick={goDashboard}>View application dashboard</button></section></div>
 }

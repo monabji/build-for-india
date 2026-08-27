@@ -6,7 +6,6 @@ export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const [largeText, setLargeText] = useState(() => localStorage.getItem('udid-large-text') === 'true')
   const [highContrast, setHighContrast] = useState(() => localStorage.getItem('udid-high-contrast') === 'true')
-  const [hindi, setHindi] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText)
@@ -28,9 +27,6 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       <header className="site-header">
         <div className="utility container" aria-label="Accessibility options">
-          <button className="utility-button" type="button" onClick={() => setHindi((value) => !value)} aria-pressed={hindi}>
-            {hindi ? 'English' : 'हिन्दी'}
-          </button>
           <button className="utility-button" type="button" onClick={() => setLargeText((value) => !value)} aria-pressed={largeText}>Larger text</button>
           <button className="utility-button" type="button" onClick={() => setHighContrast((value) => !value)} aria-pressed={highContrast}>High contrast</button>
           <Link to="/help">Help</Link>
