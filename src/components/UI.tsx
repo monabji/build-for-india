@@ -34,7 +34,7 @@ export function StatusPanel({ application }: { application: ApplicationRecord })
   const statusImage = application.currentStatus === 'CORRECTION_REQUIRED'
     ? '/assets/service-correction-path.jpg'
     : application.currentStatus === 'ASSESSMENT_SCHEDULED'
-      ? '/assets/service-dashboard-consultation.jpg'
+      ? '/assets/udid-hero-woman-wheelchair.jpg'
       : '/assets/service-application-documents.jpg'
   return <section className="status-panel" aria-labelledby="status-heading">
     <div className="status-panel-copy"><p className="status-kicker">Current status</p>
