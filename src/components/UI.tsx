@@ -39,8 +39,8 @@ export function Timeline({ events, compact = false }: { events: StatusEvent[]; c
 
 const explanations: Record<string, { simple: string; hindi: string }> = {
   application: { simple: 'We ask for information in small steps. Your progress is saved after each step, and you can review everything before sending it.', hindi: 'हम जानकारी छोटे चरणों में पूछते हैं। हर चरण के बाद आपकी प्रगति सहेजी जाती है।' },
-  rejection: { simple: 'Only the address proof needs to be replaced. Choose a clear synthetic file where the name and address can be read. Everything else stays saved.', hindi: 'केवल पते का प्रमाण बदलना है। बाकी जानकारी सुरक्षित है।' },
-  status: { simple: 'This summary is based only on the selected demo scenario. It tells you the latest event and the next action; it is not an official status.', hindi: 'यह सारांश केवल चुने गए डेमो पर आधारित है। यह आधिकारिक स्थिति नहीं है।' },
+  rejection: { simple: 'Only the address proof needs to be replaced. Choose a clear file where the name and address can be read. Everything else stays saved.', hindi: 'केवल पते का प्रमाण बदलना है। बाकी जानकारी सुरक्षित है।' },
+  status: { simple: 'This summary shows the latest event and the next action for the selected application.', hindi: 'यह सारांश नवीनतम घटना और अगले कदम को दिखाता है।' },
 }
 
 export function AssistantPanel({ context }: { context: keyof typeof explanations }) {
@@ -48,16 +48,15 @@ export function AssistantPanel({ context }: { context: keyof typeof explanations
   const item = explanations[context]
   return <aside className="assistant-panel" aria-labelledby={`assistant-${context}`}>
     <h2 id={`assistant-${context}`}>Need this explained differently?</h2>
-    <p>This optional assistant uses approved prototype content only. It does not decide eligibility or give medical advice.</p>
+    <p>This optional assistant explains service information. It does not decide eligibility or give medical advice.</p>
     <div className="button-row">
       <button className="secondary-button" type="button" onClick={() => setAnswer(item.simple)}>Explain simply</button>
       <button className="text-button" type="button" onClick={() => setAnswer(item.hindi)}>हिन्दी में समझाएँ</button>
     </div>
-    {answer && <div className="assistant-answer" role="status"><strong>Prototype information</strong><p>{answer}</p></div>}
+    {answer && <div className="assistant-answer" role="status"><strong>Service information</strong><p>{answer}</p></div>}
   </aside>
 }
 
 export function ProgressSteps({ current, labels }: { current: number; labels: string[] }) {
   return <nav className="progress-steps" aria-label="Application progress"><p><strong>Step {current + 1} of {labels.length}</strong> — {labels[current]}</p><div className="progress-track" aria-hidden="true"><span style={{ width: `${((current + 1) / labels.length) * 100}%` }} /></div><ol>{labels.map((label, index) => <li className={index === current ? 'active' : index < current ? 'complete' : ''} key={label}><span>{index + 1}</span>{label}</li>)}</ol></nav>
 }
-

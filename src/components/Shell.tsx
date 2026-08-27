@@ -39,7 +39,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
             <span>UDID Saathi <small>साथी · Citizen service redesign</small></span>
           </Link>
-          <Link className="dashboard-link" to="/dashboard">View demo dashboard</Link>
+          <Link className="dashboard-link" to="/dashboard">View my dashboard</Link>
         </div>
         <nav className="primary-nav" aria-label="Main navigation">
           <div className="container nav-list">
@@ -53,11 +53,11 @@ export function Shell({ children }: { children: ReactNode }) {
       <main id="main-content" className="main-content" tabIndex={-1}>{children}</main>
       <footer className="site-footer">
         <div className="container footer-grid">
-          <div><strong>UDID Saathi</strong><p>A warm, accessible hackathon prototype built around clear tasks and recoverable citizen journeys.</p></div>
+          <div><strong>UDID Saathi</strong><p>A warm, accessible service built around clear tasks and recoverable citizen journeys.</p></div>
           <nav aria-label="Footer navigation">
-            <Link to="/prototype">Prototype and privacy</Link>
+            <Link to="/prototype">Privacy and service information</Link>
             <Link to="/help">Help and FAQs</Link>
-            <Link to="/find-help">Find a demo centre</Link>
+            <Link to="/find-help">Find a medical centre</Link>
           </nav>
         </div>
       </footer>

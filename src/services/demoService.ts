@@ -41,7 +41,7 @@ export class DemoService {
     record.applicantName = draft.applicantName
     record.draft = structuredClone(draft)
     record.mode = draft.mode
-    this.transition('new', 'SUBMITTED', 'Application submitted', 'Your synthetic application has been received.', 'The demo service will begin document review.')
+    this.transition('new', 'SUBMITTED', 'Application submitted', 'Your application has been received.', 'Document review will begin next.')
     record.completionPercent = 100
     localStorage.removeItem(DRAFT_KEY)
     this.persist()
@@ -54,7 +54,7 @@ export class DemoService {
     const timestamp = nowLabel()
     const event: StatusEvent = {
       id: `event-${Date.now()}`, status: to, title, description, occurredAt: timestamp,
-      actorLabel: 'Demo service', userActionRequired: to === 'CORRECTION_REQUIRED', nextAction,
+      actorLabel: 'Service team', userActionRequired: to === 'CORRECTION_REQUIRED', nextAction,
     }
     app.currentStatus = to
     app.currentNextAction = nextAction
@@ -86,7 +86,7 @@ export class DemoService {
     app.updatedAt = nowLabel()
     app.timeline.unshift({
       id: `event-${Date.now()}`, status: app.currentStatus, title: 'Appointment rescheduled',
-      description: `The synthetic appointment is now ${date} at ${time}.`, occurredAt: app.updatedAt,
+      description: `The appointment is now ${date} at ${time}.`, occurredAt: app.updatedAt,
       actorLabel: 'Applicant', userActionRequired: true, nextAction: `Attend the appointment on ${date} at ${time}.`,
     })
     app.currentNextAction = `Attend the appointment on ${date} at ${time}.`
@@ -103,4 +103,3 @@ export class DemoService {
     return this.listScenarios()
   }
 }
-
