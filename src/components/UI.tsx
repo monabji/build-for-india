@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { statusLabels } from '../domain/rules'
 import type { ApplicationRecord, StatusEvent } from '../domain/types'
+import { ServiceIcon, type ServiceIconName } from './ServiceIcon'
 
 export function PageIntro({ eyebrow, title, children }: { eyebrow?: string; title: string; children: ReactNode }) {
   return <header className="page-intro">{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1>{title}</h1><div className="lead">{children}</div></header>
@@ -11,8 +12,8 @@ export function Breadcrumbs({ items }: { items: { label: string; to?: string }[]
   return <nav className="breadcrumbs" aria-label="Breadcrumb"><ol>{items.map((item, index) => <li key={item.label}>{item.to ? <Link to={item.to}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}{index < items.length - 1 && <span aria-hidden="true">›</span>}</li>)}</ol></nav>
 }
 
-export function TaskCard({ to, title, children, number }: { to: string; title: string; children: ReactNode; number?: string }) {
-  return <Link className="task-card" to={to}>{number && <span className="task-number" aria-hidden="true">{number}</span>}<span><strong>{title}</strong><small>{children}</small></span><span className="task-arrow" aria-hidden="true">→</span></Link>
+export function TaskCard({ to, title, children, number, icon }: { to: string; title: string; children: ReactNode; number?: string; icon?: ServiceIconName }) {
+  return <Link className="task-card" to={to}>{icon ? <span className="task-icon" aria-hidden="true"><ServiceIcon name={icon} /></span> : number && <span className="task-number" aria-hidden="true">{number}</span>}<span><strong>{title}</strong><small>{children}</small></span><span className="task-arrow" aria-hidden="true">→</span></Link>
 }
 
 export function Alert({ type = 'info', title, children }: { type?: 'info' | 'success' | 'warning' | 'error'; title: string; children: ReactNode }) {

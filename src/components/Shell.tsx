@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { AffiliateStrip } from './AffiliateStrip'
 
 export function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
@@ -35,10 +36,13 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/help">Help</Link>
         </div>
         <div className="brand-row container">
-          <Link className="brand" to="/" aria-label="UDID service redesign home">
-            <span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>
-            <span>UDID Saathi <small>साथी · Citizen service redesign</small></span>
-          </Link>
+          <div className="government-identity">
+            <img className="state-emblem" src="/assets/state-emblem.svg" alt="State Emblem of India" />
+            <Link className="brand" to="/" aria-label="UDID Saathi home">
+              <span>UDID Saathi <small>साथी · A clearer citizen service</small></span>
+            </Link>
+          </div>
+          <img className="swavlamban-logo" src="/assets/swavlamban-logo.png" alt="Swavlamban — Unique Disability ID" />
           <Link className="dashboard-link" to="/dashboard">View my dashboard</Link>
         </div>
         <nav className="primary-nav" aria-label="Main navigation">
@@ -51,15 +55,14 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main id="main-content" className="main-content" tabIndex={-1}>{children}</main>
+      <AffiliateStrip />
       <footer className="site-footer">
         <div className="container footer-grid">
-          <div><strong>UDID Saathi</strong><p>A warm, accessible service built around clear tasks and recoverable citizen journeys.</p></div>
-          <nav aria-label="Footer navigation">
-            <Link to="/prototype">Privacy and service information</Link>
-            <Link to="/help">Help and FAQs</Link>
-            <Link to="/find-help">Find a medical centre</Link>
-          </nav>
+          <section><h2>About UDID Saathi</h2><p>A warm, accessible route through applications, corrections, certificates and support.</p><Link to="/prototype">Privacy and service information</Link></section>
+          <nav aria-label="Quick access"><h2>Quick access</h2><Link to="/">Home</Link><Link to="/apply">Apply for a UDID card</Link><Link to="/track">Track an application</Link><Link to="/find-help">Find a medical centre</Link></nav>
+          <section><h2>Accessibility</h2><p>Use the controls at the top of every page for larger text and high contrast.</p><Link to="/help">Help and FAQs</Link></section>
         </div>
+        <div className="container footer-bottom"><p>© 2026 UDID Saathi service concept</p><nav aria-label="Policy links"><Link to="/prototype">Privacy</Link><Link to="/prototype">Accessibility statement</Link><Link to="/help">Contact support</Link></nav></div>
       </footer>
     </div>
   )

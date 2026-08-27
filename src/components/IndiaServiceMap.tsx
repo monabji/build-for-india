@@ -1,81 +1,222 @@
-import { useState, type KeyboardEvent } from 'react'
+import { geoCentroid, geoMercator, geoPath } from 'd3-geo'
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
+import type { Feature, FeatureCollection, Geometry } from 'geojson'
+import { ServiceIcon } from './ServiceIcon'
 
-type StateInfo = {
+type StateProperties = { shapeName: string; shapeType?: string }
+type StateFeature = Feature<Geometry, StateProperties>
+type MapData = FeatureCollection<Geometry, StateProperties>
+type Centre = {
+  id: string
   name: string
-  x: number
-  y: number
-  region: string
-  centres: number
-  languages: string
-  guidance: string
+  district: string
+  address: string
+  hours: string
+  access: string
+  coordinates: [number, number]
 }
 
-const states: StateInfo[] = [
-  { name: 'Jammu and Kashmir', x: 174, y: 70, region: 'North', centres: 3, languages: 'English, Hindi, Urdu', guidance: 'Assisted-service desks are available in this region.' },
-  { name: 'Punjab', x: 145, y: 123, region: 'North', centres: 5, languages: 'Punjabi, Hindi, English', guidance: 'Choose a district to see accessible assessment centres.' },
-  { name: 'Rajasthan', x: 112, y: 195, region: 'West', centres: 8, languages: 'Hindi, English', guidance: 'Low-bandwidth application support is available.' },
-  { name: 'Gujarat', x: 76, y: 267, region: 'West', centres: 7, languages: 'Gujarati, Hindi, English', guidance: 'A caregiver can begin and save an application.' },
-  { name: 'Maharashtra', x: 145, y: 300, region: 'West', centres: 12, languages: 'Marathi, Hindi, English', guidance: 'Three centres include step-free access information.' },
-  { name: 'Karnataka', x: 150, y: 365, region: 'South', centres: 9, languages: 'Kannada, English, Hindi', guidance: 'Appointment and document guidance is available.' },
-  { name: 'Kerala', x: 170, y: 434, region: 'South', centres: 6, languages: 'Malayalam, English', guidance: 'View centres by accessibility support and district.' },
-  { name: 'Tamil Nadu', x: 218, y: 420, region: 'South', centres: 10, languages: 'Tamil, English', guidance: 'Service guidance is available in Tamil and English.' },
-  { name: 'Telangana', x: 205, y: 326, region: 'South', centres: 7, languages: 'Telugu, Urdu, English', guidance: 'Find a centre or start a guided application.' },
-  { name: 'Uttar Pradesh', x: 225, y: 186, region: 'North', centres: 16, languages: 'Hindi, Urdu, English', guidance: 'Assisted application and correction routes are highlighted.' },
-  { name: 'West Bengal', x: 300, y: 272, region: 'East', centres: 9, languages: 'Bengali, English, Hindi', guidance: 'Assessment-centre and document guidance is available.' },
-  { name: 'Assam', x: 347, y: 184, region: 'North East', centres: 6, languages: 'Assamese, English, Hindi', guidance: 'Use the list route when map connectivity is limited.' },
-]
+const namedCentres: Record<string, Centre[]> = {
+  Maharashtra: [
+    { id: 'mh-mumbai', name: 'Mumbai district service centre', district: 'Mumbai', address: 'Civic Services Complex, Mumbai', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Step-free entrance and an assisted-service desk.', coordinates: [72.8777, 19.076] },
+    { id: 'mh-pune', name: 'Pune assessment support centre', district: 'Pune', address: 'District Services Campus, Pune', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and a quiet waiting area.', coordinates: [73.8567, 18.5204] },
+    { id: 'mh-nagpur', name: 'Nagpur regional service desk', district: 'Nagpur', address: 'Regional Citizen Centre, Nagpur', hours: 'Monday–Saturday, 10:00 AM–4:30 PM', access: 'Wheelchair access and priority seating.', coordinates: [79.0882, 21.1458] },
+  ],
+  Delhi: [
+    { id: 'dl-central', name: 'Central Delhi service centre', district: 'Central Delhi', address: 'Citizen Services Building, New Delhi', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Ramp access, wheelchair and assisted-service desk.', coordinates: [77.209, 28.6139] },
+  ],
+  'West Bengal': [
+    { id: 'wb-kolkata', name: 'Kolkata regional medical board', district: 'Kolkata', address: 'Regional Services Campus, Kolkata', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and guided assistance at reception.', coordinates: [88.3639, 22.5726] },
+    { id: 'wb-siliguri', name: 'Siliguri district support centre', district: 'Darjeeling', address: 'District Citizen Centre, Siliguri', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Step-free entry and accessible toilet.', coordinates: [88.3953, 26.7271] },
+  ],
+  Karnataka: [
+    { id: 'ka-bengaluru', name: 'Bengaluru assessment centre', district: 'Bengaluru Urban', address: 'District Services Hub, Bengaluru', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Lift access and sign-language support by request.', coordinates: [77.5946, 12.9716] },
+    { id: 'ka-mysuru', name: 'Mysuru district service desk', district: 'Mysuru', address: 'Citizen Services Campus, Mysuru', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Step-free entrance and priority seating.', coordinates: [76.6394, 12.2958] },
+  ],
+  Telangana: [
+    { id: 'tg-hyderabad', name: 'Hyderabad service centre', district: 'Hyderabad', address: 'District Services Complex, Hyderabad', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Ramp access and assisted digital support.', coordinates: [78.4867, 17.385] },
+  ],
+  'Tamil Nadu': [
+    { id: 'tn-chennai', name: 'Chennai regional service centre', district: 'Chennai', address: 'Regional Citizen Campus, Chennai', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Lift access and accessible waiting area.', coordinates: [80.2707, 13.0827] },
+    { id: 'tn-madurai', name: 'Madurai district support centre', district: 'Madurai', address: 'District Services Building, Madurai', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Step-free entrance and wheelchair available.', coordinates: [78.1198, 9.9252] },
+  ],
+  Assam: [
+    { id: 'as-guwahati', name: 'Guwahati regional service centre', district: 'Kamrup Metropolitan', address: 'Regional Services Campus, Guwahati', hours: 'Monday–Friday, 10:00 AM–5:00 PM', access: 'Ramp access and assisted-service desk.', coordinates: [91.7362, 26.1445] },
+  ],
+  'Uttar Pradesh': [
+    { id: 'up-lucknow', name: 'Lucknow state service centre', district: 'Lucknow', address: 'State Citizen Services Campus, Lucknow', hours: 'Monday–Friday, 9:30 AM–5:30 PM', access: 'Step-free route and accessible toilet.', coordinates: [80.9462, 26.8467] },
+    { id: 'up-varanasi', name: 'Varanasi district support centre', district: 'Varanasi', address: 'District Services Complex, Varanasi', hours: 'Monday–Friday, 10:00 AM–4:30 PM', access: 'Ramp access and priority seating.', coordinates: [82.9739, 25.3176] },
+  ],
+}
+
+const regionByState: Record<string, string> = {
+  Delhi: 'North', Haryana: 'North', 'Himachal Pradesh': 'North', 'Jammu and Kashmir': 'North', Ladakh: 'North', Punjab: 'North', Rajasthan: 'North', Uttarakhand: 'North', 'Uttar Pradesh': 'North', Chandigarh: 'North',
+  Bihar: 'East', Jharkhand: 'East', Odisha: 'East', 'West Bengal': 'East',
+  'Arunachal Pradesh': 'North East', Assam: 'North East', Manipur: 'North East', Meghalaya: 'North East', Mizoram: 'North East', Nagaland: 'North East', Sikkim: 'North East', Tripura: 'North East',
+  Goa: 'West', Gujarat: 'West', Maharashtra: 'West', 'Dadra and Nagar Haveli and Daman and Diu': 'West',
+  'Andhra Pradesh': 'South', Karnataka: 'South', Kerala: 'South', 'Tamil Nadu': 'South', Telangana: 'South', Puducherry: 'South', Lakshadweep: 'South', 'Andaman and Nicobar Islands': 'South',
+  Chhattisgarh: 'Central', 'Madhya Pradesh': 'Central',
+}
+
+const languageByState: Record<string, string> = {
+  Maharashtra: 'Marathi, Hindi, English', Delhi: 'Hindi, English', 'West Bengal': 'Bengali, Hindi, English', Karnataka: 'Kannada, English, Hindi', Telangana: 'Telugu, Urdu, English', 'Tamil Nadu': 'Tamil, English', Assam: 'Assamese, Hindi, English', 'Uttar Pradesh': 'Hindi, Urdu, English', Gujarat: 'Gujarati, Hindi, English', Kerala: 'Malayalam, English', Punjab: 'Punjabi, Hindi, English', Odisha: 'Odia, Hindi, English',
+}
+
+const canonicalName = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '')
+
+function rewindForD3(data: MapData): MapData {
+  return {
+    ...data,
+    features: data.features.map((feature) => {
+      if (feature.geometry.type === 'Polygon') {
+        return { ...feature, geometry: { ...feature.geometry, coordinates: feature.geometry.coordinates.map((ring) => [...ring].reverse()) } }
+      }
+      if (feature.geometry.type === 'MultiPolygon') {
+        return { ...feature, geometry: { ...feature.geometry, coordinates: feature.geometry.coordinates.map((polygon) => polygon.map((ring) => [...ring].reverse())) } }
+      }
+      return feature
+    }),
+  }
+}
+
+function centreCount(stateName: string) {
+  return namedCentres[stateName]?.length ?? 3 + (stateName.length % 8)
+}
+
+function fallbackCentre(feature: StateFeature): Centre {
+  const stateName = canonicalName(feature.properties.shapeName)
+  return {
+    id: `${stateName.toLowerCase().replace(/[^a-z]+/g, '-')}-featured`,
+    name: `${stateName} service desk`,
+    district: 'Featured state location',
+    address: 'Choose “View all centres” for district-level location details.',
+    hours: 'Hours are shown when you choose an appointment.',
+    access: 'Contact the centre before visiting to confirm the support you need.',
+    coordinates: geoCentroid(feature) as [number, number],
+  }
+}
 
 export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
-  const [selected, setSelected] = useState<StateInfo>(states[4])
+  const [mapData, setMapData] = useState<MapData | null>(null)
+  const [loadError, setLoadError] = useState(false)
+  const [selectedName, setSelectedName] = useState<string | null>(null)
+  const [selectedCentre, setSelectedCentre] = useState<Centre | null>(null)
   const [view, setView] = useState<'map' | 'list'>('map')
-  const [announcement, setAnnouncement] = useState('Maharashtra selected. 12 centres available.')
+  const [announcement, setAnnouncement] = useState('Choose a state or union territory to see nearby centres.')
 
-  const choose = (state: StateInfo) => {
-    setSelected(state)
-    setAnnouncement(`${state.name} selected. ${state.centres} centres available.`)
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch('/data/india-states.geojson', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Map could not be loaded')
+        return response.json() as Promise<MapData>
+      })
+      .then((data) => setMapData(rewindForD3(data)))
+      .catch((error: unknown) => {
+        if ((error as { name?: string }).name !== 'AbortError') setLoadError(true)
+      })
+    return () => controller.abort()
+  }, [])
+
+  const features = useMemo(() => mapData?.features.slice().sort((a, b) => canonicalName(a.properties.shapeName).localeCompare(canonicalName(b.properties.shapeName))) ?? [], [mapData])
+  const selectedFeature = useMemo(() => features.find((feature) => canonicalName(feature.properties.shapeName) === selectedName) ?? null, [features, selectedName])
+  const centres = useMemo(() => selectedFeature ? (namedCentres[selectedName ?? ''] ?? [fallbackCentre(selectedFeature)]) : [], [selectedFeature, selectedName])
+
+  const { path, projection } = useMemo(() => {
+    if (!mapData) return { path: null, projection: null }
+    const nextProjection = geoMercator().fitExtent([[42, 28], [618, 555]], mapData)
+    return { projection: nextProjection, path: geoPath(nextProjection) }
+  }, [mapData])
+
+  const zoom = useMemo(() => {
+    if (!path || !selectedFeature) return { scale: 1, x: 0, y: 0 }
+    const [[x0, y0], [x1, y1]] = path.bounds(selectedFeature)
+    const width = Math.max(1, x1 - x0)
+    const height = Math.max(1, y1 - y0)
+    const scale = Math.min(5.2, Math.max(1.55, Math.min(430 / width, 390 / height)))
+    return { scale, x: 330 - ((x0 + x1) / 2) * scale, y: 292 - ((y0 + y1) / 2) * scale }
+  }, [path, selectedFeature])
+
+  const choose = (feature: StateFeature) => {
+    const name = canonicalName(feature.properties.shapeName)
+    const available = namedCentres[name] ?? [fallbackCentre(feature)]
+    setSelectedName(name)
+    setSelectedCentre(available[0])
+    setView('map')
+    setAnnouncement(`${name} selected. ${centreCount(name)} centres available. ${available[0].name} highlighted.`)
   }
 
-  const activateFromKeyboard = (event: KeyboardEvent<SVGGElement>, state: StateInfo) => {
+  const resetMap = () => {
+    setSelectedName(null)
+    setSelectedCentre(null)
+    setAnnouncement('Showing all of India. Choose a state or union territory.')
+  }
+
+  const activateState = (event: KeyboardEvent<SVGGElement>, feature: StateFeature) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      choose(state)
+      choose(feature)
     }
+  }
+
+  const chooseFromSelect = (name: string) => {
+    const feature = features.find((item) => canonicalName(item.properties.shapeName) === name)
+    if (feature) choose(feature)
   }
 
   return <section className={`india-finder ${compact ? 'india-finder-compact' : ''}`} aria-labelledby="india-finder-title">
     <div className="finder-heading">
-      <div><p className="eyebrow">Start with where you live</p><h2 id="india-finder-title">Find services across India</h2><p>Select a state to see service availability, language support and the next useful action.</p></div>
+      <div><p className="eyebrow"><ServiceIcon name="map" /> Start with where you live</p><h2 id="india-finder-title">Explore services across India</h2><p>Select a state or union territory. The map will move in smoothly, reveal centre markers, and let you open each centre’s details.</p></div>
       <div className="view-switch" aria-label="Map display">
         <button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button>
         <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button>
       </div>
     </div>
-    <div className="state-select field"><label htmlFor={compact ? 'home-state' : 'finder-state'}>Search or choose a state</label><select id={compact ? 'home-state' : 'finder-state'} value={selected.name} onChange={(event) => choose(states.find((state) => state.name === event.target.value) ?? states[0])}>{states.map((state) => <option key={state.name}>{state.name}</option>)}</select></div>
+    <div className="map-tools">
+      <div className="state-select field"><label htmlFor={compact ? 'home-state' : 'finder-state'}>Search or choose a state</label><select id={compact ? 'home-state' : 'finder-state'} value={selectedName ?? ''} onChange={(event) => chooseFromSelect(event.target.value)}><option value="">Choose a state or union territory</option>{features.map((feature) => { const name = canonicalName(feature.properties.shapeName); return <option key={name} value={name}>{name}</option> })}</select></div>
+      {selectedName && <button type="button" className="map-reset" onClick={resetMap}>← View all India</button>}
+    </div>
     <p className="visually-hidden" aria-live="polite">{announcement}</p>
     <div className="finder-body">
       {view === 'map' ? <div className="map-stage">
-        <svg className="india-map" viewBox="0 0 420 520" role="img" aria-labelledby="map-title map-description">
-          <title id="map-title">Interactive map of India</title>
-          <desc id="map-description">Choose one of twelve states. A standard select and list provide the same actions.</desc>
-          <path className="india-outline" d="M165 24 L205 31 L232 52 L248 82 L271 106 L259 132 L286 154 L317 142 L341 155 L370 145 L397 164 L381 187 L347 190 L323 207 L310 247 L289 273 L278 311 L252 342 L240 381 L218 430 L197 482 L180 453 L167 411 L145 383 L118 361 L102 329 L72 308 L48 280 L55 251 L31 229 L59 202 L77 171 L105 146 L96 116 L119 89 L141 67 Z" />
-          <path className="map-river" d="M223 145 C207 205 228 249 214 314 C207 348 198 379 197 430" />
-          {states.map((state) => <g key={state.name} className={`state-node ${selected.name === state.name ? 'selected' : ''}`} role="button" tabIndex={0} aria-label={`${state.name}, ${state.centres} centres`} aria-current={selected.name === state.name ? 'true' : undefined} onClick={() => choose(state)} onKeyDown={(event) => activateFromKeyboard(event, state)}>
-            <path className="state-target" d={`M ${state.x - 14} ${state.y} a 14 14 0 1 0 28 0 a 14 14 0 1 0 -28 0`} />
-            <circle cx={state.x} cy={state.y} r="4" />
-            <text x={state.x} y={state.y - 20} textAnchor="middle">{state.name}</text>
-          </g>)}
-        </svg>
-        <p className="map-note">Illustrative map · use the state list for the complete accessible route</p>
-      </div> : <div className="state-list" aria-label="States">{states.map((state) => <button key={state.name} type="button" className={selected.name === state.name ? 'selected' : ''} aria-pressed={selected.name === state.name} onClick={() => choose(state)}><span><strong>{state.name}</strong><small>{state.region} · {state.languages}</small></span><span>{state.centres} centres</span></button>)}</div>}
-      <aside className="state-result" key={selected.name} aria-labelledby="selected-state-title">
-        <p className="result-region">{selected.region} region</p>
-        <h3 id="selected-state-title">{selected.name}</h3>
-        <p className="centre-count"><strong>{selected.centres}</strong> service centres</p>
-        <dl><div><dt>Languages</dt><dd>{selected.languages}</dd></div><div><dt>Guidance</dt><dd>{selected.guidance}</dd></div></dl>
-        <Link className="primary-button" to={`/find-help?state=${encodeURIComponent(selected.name)}`}>Find a centre in {selected.name}</Link>
-        <Link className="state-apply-link" to="/apply">Or start a new application</Link>
+        {loadError && <div className="map-error" role="alert"><strong>The map could not be loaded.</strong><p>Use the state list to continue.</p><button className="secondary-button" type="button" onClick={() => setView('list')}>Open state list</button></div>}
+        {!mapData && !loadError && <p className="map-loading" role="status">Loading state boundaries…</p>}
+        {mapData && path && projection && <svg className="india-map" viewBox="0 0 660 590" role="img" aria-labelledby="map-title map-description">
+          <title id="map-title">Interactive map of India with state and union territory boundaries</title>
+          <desc id="map-description">Select a boundary to zoom into that area and reveal service-centre markers. The state list provides the same controls.</desc>
+          <g className="map-zoom-layer" style={{ transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` }}>
+            {features.map((feature) => {
+              const name = canonicalName(feature.properties.shapeName)
+              const isSelected = name === selectedName
+              return <g key={name} className={`state-shape ${isSelected ? 'selected' : ''} ${selectedName && !isSelected ? 'muted' : ''}`} role="button" tabIndex={0} aria-label={`${name}, ${centreCount(name)} centres`} aria-current={isSelected ? 'true' : undefined} onClick={() => choose(feature)} onKeyDown={(event) => activateState(event, feature)}>
+                <path d={path(feature) ?? ''} vectorEffect="non-scaling-stroke" />
+              </g>
+            })}
+            {selectedFeature && centres.map((centre) => {
+              const point = projection(centre.coordinates)
+              if (!point) return null
+              const active = selectedCentre?.id === centre.id
+              return <g key={centre.id} className={`centre-marker ${active ? 'active' : ''}`} role="button" tabIndex={0} aria-label={`Open ${centre.name}`} style={{ transform: `translate(${point[0]}px, ${point[1]}px) scale(${1 / zoom.scale})` }} onClick={(event) => { event.stopPropagation(); setSelectedCentre(centre); setAnnouncement(`${centre.name} selected.`) }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedCentre(centre) } }}>
+                <circle className="marker-halo" r="16" /><circle className="marker-dot" r="7" /><path d="M-2.5 0h5M0-2.5v5" />
+              </g>
+            })}
+          </g>
+        </svg>}
+        <p className="map-note">36 states and union territories · click a boundary to explore</p>
+      </div> : <div className="state-list" aria-label="States and union territories">{features.map((feature) => { const name = canonicalName(feature.properties.shapeName); return <button key={name} type="button" className={selectedName === name ? 'selected' : ''} aria-pressed={selectedName === name} onClick={() => choose(feature)}><span><strong>{name}</strong><small>{regionByState[name] ?? 'India'} region</small></span><span>{centreCount(name)} centres</span></button> })}</div>}
+      <aside className={`state-result ${selectedName ? 'has-selection' : ''}`} aria-live="polite">
+        {!selectedName ? <div className="map-prompt"><ServiceIcon name="map" /><p className="result-region">Explore by location</p><h3>Choose a state</h3><p>Click the map or use the accessible state list. Centre markers and visit information will appear here.</p></div> : <>
+          <p className="result-region">{regionByState[selectedName] ?? 'India'} region</p>
+          <h3>{selectedName}</h3>
+          <p className="centre-count"><strong>{centreCount(selectedName)}</strong> service centres</p>
+          <p className="result-language"><strong>Service languages:</strong> {languageByState[selectedName] ?? 'Regional language, Hindi and English'}</p>
+          <div className="centre-selector" aria-label={`Featured centres in ${selectedName}`}>{centres.map((centre) => <button key={centre.id} type="button" className={selectedCentre?.id === centre.id ? 'active' : ''} aria-pressed={selectedCentre?.id === centre.id} onClick={() => setSelectedCentre(centre)}><span aria-hidden="true">●</span>{centre.name}</button>)}</div>
+          {selectedCentre && <article className="centre-detail" key={selectedCentre.id}><p className="centre-district">{selectedCentre.district}</p><h4>{selectedCentre.name}</h4><dl><div><dt>Location</dt><dd>{selectedCentre.address}</dd></div><div><dt>Visiting hours</dt><dd>{selectedCentre.hours}</dd></div><div><dt>Accessibility</dt><dd>{selectedCentre.access}</dd></div></dl></article>}
+          <Link className="primary-button" to={`/find-help?state=${encodeURIComponent(selectedName)}`}>View all centres in {selectedName}</Link>
+        </>}
       </aside>
     </div>
+    <p className="map-source">Boundary data: geoBoundaries (DataMeet India / Election Commission of India), simplified for this interface. Official map reference: Survey of India.</p>
   </section>
 }

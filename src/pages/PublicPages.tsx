@@ -6,6 +6,7 @@ import type { ScenarioId } from '../domain/types'
 import { useService } from '../state/ServiceContext'
 import { Alert, Breadcrumbs, PageIntro, TaskCard } from '../components/UI'
 import { IndiaServiceMap } from '../components/IndiaServiceMap'
+import { ServiceIcon } from '../components/ServiceIcon'
 
 export function HomePage() {
   return <>
@@ -23,12 +24,31 @@ export function HomePage() {
     <div className="container page-section">
       <div className="section-title-row"><div><p className="eyebrow">Choose your task</p><h2>What would you like to do?</h2></div><p>Each route keeps your place and explains what happens next.</p></div>
       <div className="task-grid" aria-label="Choose a task">
-        <TaskCard number="01" to="/apply" title="Apply for a UDID card">See what you need and start a guided application.</TaskCard>
-        <TaskCard number="02" to="/track" title="Track my application">See the latest status, next action and timeline.</TaskCard>
-        <TaskCard number="03" to="/applications/correction/correct" title="Fix a rejected application">Understand the problem and replace only what is needed.</TaskCard>
-        <TaskCard number="04" to="/renew" title="Renew my card">Check the requirements and start a renewal.</TaskCard>
-        <TaskCard number="05" to="/replace" title="Replace a lost or damaged card">Get a clear replacement route without starting over.</TaskCard>
-        <TaskCard number="06" to="/documents/certificate" title="Download my certificate">Open your certificate and save a copy.</TaskCard>
+        <TaskCard icon="apply" to="/apply" title="Apply for a UDID card">See what you need and start a guided application.</TaskCard>
+        <TaskCard icon="track" to="/track" title="Track my application">See the latest status, next action and timeline.</TaskCard>
+        <TaskCard icon="fix" to="/applications/correction/correct" title="Fix a rejected application">Understand the problem and replace only what is needed.</TaskCard>
+        <TaskCard icon="renew" to="/renew" title="Renew my card">Check the requirements and start a renewal.</TaskCard>
+        <TaskCard icon="replace" to="/replace" title="Replace a lost or damaged card">Get a clear replacement route without starting over.</TaskCard>
+        <TaskCard icon="certificate" to="/documents/certificate" title="Download my certificate">Open your certificate and save a copy.</TaskCard>
+      </div>
+      <div className="information-grid">
+        <section className="notice-board" aria-labelledby="notices-heading">
+          <div className="panel-title"><span><ServiceIcon name="notice" /></span><div><p className="eyebrow">Announcements</p><h2 id="notices-heading">Notices and circulars</h2></div></div>
+          <ol className="notice-list">
+            <li><time dateTime="2026-08-27">27 Aug 2026</time><Link to="/help">Document upload guidance and accepted file checks</Link><span>Guidance</span></li>
+            <li><time dateTime="2026-08-21">21 Aug 2026</time><Link to="/find-help">Accessibility information for visiting service centres</Link><span>Service update</span></li>
+            <li><time dateTime="2026-08-12">12 Aug 2026</time><Link to="/applications/correction/correct">How to correct an application without starting again</Link><span>Circular</span></li>
+          </ol>
+          <Link className="panel-link" to="/help">View all notices <span aria-hidden="true">→</span></Link>
+        </section>
+        <section className="document-preview-panel" aria-labelledby="document-preview-heading">
+          <div><p className="eyebrow">Know your document</p><h2 id="document-preview-heading">What a UDID certificate contains</h2><p>Your digital certificate brings identity, disability-category and issuing-authority information together in one document.</p><Link to="/documents/certificate">Open certificate area <span aria-hidden="true">→</span></Link></div>
+          <div className="certificate-preview" role="img" aria-label="A visual preview of a UDID certificate showing the State Emblem of India, certificate title, photograph area and key information fields">
+            <div className="certificate-preview-head"><img src="/assets/state-emblem.svg" alt="" /><span><strong>Unique Disability ID</strong><small>Government of India</small></span></div>
+            <div className="certificate-preview-body"><div className="photo-placeholder" aria-hidden="true"><ServiceIcon name="certificate" /></div><dl><div><dt>Name</dt><dd>•••• ••••</dd></div><div><dt>UDID number</dt><dd>•••• •••• ••••</dd></div><div><dt>Issue date</dt><dd>•• / •• / ••••</dd></div></dl></div>
+            <div className="certificate-preview-foot"><span>UDID certificate</span><i aria-hidden="true" /></div>
+          </div>
+        </section>
       </div>
       <section className="guidance-strip" aria-labelledby="unsure-heading">
         <div><h2 id="unsure-heading">Not sure what to do?</h2><p>Answer two plain-language questions and we will point you to the right service.</p></div>
