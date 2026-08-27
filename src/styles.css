@@ -929,7 +929,7 @@ body { min-width: 0; overflow-x: clip; }
   background-image:
     linear-gradient(90deg, rgba(5, 31, 33, .98) 0%, rgba(8, 49, 50, .91) 34%, rgba(8, 49, 50, .58) 56%, rgba(8, 49, 50, .12) 78%),
     url('/assets/udid-hero-woman-wheelchair.jpg');
-  background-position: center, center;
+  background-position: center, center 22%;
   background-size: cover;
 }
 .home-photo-hero .home-opening { display: block; }
