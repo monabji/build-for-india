@@ -89,9 +89,8 @@ export function ApplicationPage() {
   const describedBy = (id: string, hint?: boolean) => [hint ? `${id}-hint` : '', errors[id] ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
 
   const saveOnly = () => {
-    setSaveState('Saving…')
     saveDraft(draft)
-    setSaveState('Saved on this device just now.')
+    navigate('/apply?saved=true')
   }
 
   const next = (event: FormEvent) => {

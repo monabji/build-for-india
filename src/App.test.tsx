@@ -70,4 +70,13 @@ describe('route and form accessibility', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
     expect(screen.getByRole('link', { name: 'Enter the applicant’s name.' })).toHaveAttribute('href', '#applicantName')
   })
+
+  it('saves the draft and returns to the application start page', async () => {
+    renderRoute('/apply/authority')
+    fireEvent.click(screen.getByRole('button', { name: 'Save and come back later' }))
+    expect(await screen.findByRole('heading', { name: 'Apply for a disability certificate and UDID card' })).toBeInTheDocument()
+    expect(screen.getByText('Draft saved')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Resume saved application' })).toHaveAttribute('href', '/apply/about?resume=true')
+    expect(localStorage.getItem('udid-redesign-draft-v1')).not.toBeNull()
+  })
 })

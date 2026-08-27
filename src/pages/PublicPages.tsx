@@ -116,11 +116,13 @@ export function GuidancePage() {
 export function ApplyStartPage() {
   const [searchParams] = useSearchParams()
   const mode = searchParams.get('mode')
+  const saved = searchParams.get('saved') === 'true'
   const startTarget = mode === 'caregiver' || mode === 'assisted' ? `/apply/about?mode=${mode}` : '/apply/about'
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Apply' }]} />
     <PageIntro eyebrow="New application" title="Apply for a disability certificate and UDID card"><p>Complete one guided application. We do not ask for Aadhaar, medical records or identity numbers.</p></PageIntro>
     <figure className="journey-photo-card service-page-photo application-photo-card"><img src="/assets/service-application-documents.jpg" alt="Hands completing forms at a desk" /><figcaption><strong>Start with the information you have</strong><span>Keep your documents nearby. You can save this application and return later.</span></figcaption></figure>
+    {saved && <Alert type="success" title="Draft saved"><p>Your progress is saved on this device. Come back here anytime to continue.</p><Link to="/apply/about?resume=true">Resume saved application</Link></Alert>}
     <div className="info-columns"><section><h2>What you will need</h2><ul className="check-list"><li>Applicant and address information</li><li>Identity and address documents</li><li>General disability category — no diagnosis</li><li>A preferred medical centre</li></ul></section><section><h2>What happens next</h2><ol><li>Complete 7 short steps</li><li>Review all answers</li><li>Receive an application ID</li></ol></section></div>
     <div className="button-row"><Link className="primary-button" to={startTarget}>Start application</Link><Link className="text-button" to="/apply/about?resume=true">Resume saved draft</Link></div>
   </div>
