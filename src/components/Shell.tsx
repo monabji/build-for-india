@@ -54,6 +54,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="container nav-shell">
             <button className="mobile-menu-button" type="button" aria-expanded={menuOpen} aria-controls="citizen-navigation" onClick={() => setMenuOpen((value) => !value)}><span>{menuOpen ? 'Close services' : 'Open services'}</span><b aria-hidden="true">{menuOpen ? '×' : '☰'}</b></button>
             <div id="citizen-navigation" className={`nav-list ${menuOpen ? 'nav-list--open' : ''}`} onClick={(event) => { if ((event.target as Element).closest('a')) setMenuOpen(false) }}>
+              <NavLink to="/" end>Home</NavLink>
               <NavLink to="/apply" aria-label="Apply for a UDID card">Apply</NavLink>
               <NavLink to="/track" aria-label="Track an application">Track</NavLink>
               <NavLink to="/renew" className={({ isActive }) => isActive || isRenewOrReplaceRoute ? 'active' : undefined}>Renew or replace</NavLink>
