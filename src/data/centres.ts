@@ -77,6 +77,9 @@ export const authorities: Authority[] = centreSeeds.map(([state, district, longi
   address: `District Citizen Services Campus, ${district}`,
   accessNotes: 'Step-free entrance, accessible waiting area and assisted-service support on request.',
   contactLabel: 'Synthetic centre details — confirm official information before visiting.',
+  phone: '1800-000-UDID (sample only)',
+  directions: `Use the district public-services entrance; ask reception for the accessible route to ${district} assessment and service centre.`,
+  verifiedAt: '27 August 2026 (synthetic)',
   hours: 'Monday–Friday, 10:00 AM–5:00 PM',
   coordinates: [longitude, latitude],
 }))

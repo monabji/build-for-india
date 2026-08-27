@@ -16,6 +16,7 @@ export function HomePage() {
           <p className="eyebrow">Namaste · UDID Saathi / साथी</p>
           <h1>Disability services that start with you</h1>
           <p className="lead">Apply, track an application or fix a document through one clear and accessible service.</p>
+          <div className="hero-actions"><Link className="primary-button" to="/apply">Start application</Link><Link className="secondary-button hero-secondary-button" to="/track">Track or fix an existing application</Link></div>
           <p className="welcome-support-link"><Link to="/apply?mode=caregiver">I am applying for someone else</Link></p>
         </div>
       </div>
@@ -28,6 +29,11 @@ export function HomePage() {
         <TaskCard icon="track" to="/track" title="Track my application">See the latest update, your next action and who can help.</TaskCard>
         <TaskCard icon="fix" to="/track?intent=correction" title="Fix my application">Replace only the document that needs attention. Everything else stays saved.</TaskCard>
       </div>
+    </section>
+
+    <section className="container problem-evidence" aria-labelledby="problem-evidence-heading">
+      <div><p className="eyebrow">Why this service is designed differently</p><h2 id="problem-evidence-heading">The hard part is often knowing what happens next</h2><p>People can be left unsure about documents, a vague status, a rejected upload, caregiver roles and whether a centre will be accessible.</p></div>
+      <div className="experience-compare"><article><p className="eyebrow">Current experience</p><ul><li>Unclear preparation and document rules</li><li>Statuses without a practical next action</li><li>Corrections that feel like starting over</li></ul></article><article><p className="eyebrow">Saathi journey</p><ul><li>Plain-language checklist before each task</li><li>Timeline with the next action made visible</li><li>Replace one document while preserving progress</li></ul></article></div>
     </section>
 
     <div className="container page-section home-content-flow">
@@ -115,31 +121,55 @@ export function GuidancePage() {
 
 export function ApplyStartPage() {
   const [searchParams] = useSearchParams()
+  const { loadDraft, loadDraftStep } = useService()
   const mode = searchParams.get('mode')
   const saved = searchParams.get('saved') === 'true'
   const startTarget = mode === 'caregiver' || mode === 'assisted' ? `/apply/about?mode=${mode}` : '/apply/about'
+  const resumeTarget = loadDraft() ? `/apply/${loadDraftStep()}?resume=true` : '/apply/about?resume=true'
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Apply' }]} />
     <PageIntro eyebrow="New application" title="Apply for a disability certificate and UDID card"><p>Complete one guided application. We do not ask for Aadhaar, medical records or identity numbers.</p></PageIntro>
     <figure className="journey-photo-card service-page-photo application-photo-card"><img src="/assets/service-application-documents.jpg" alt="Hands completing forms at a desk" /><figcaption><strong>Start with the information you have</strong><span>Keep your documents nearby. You can save this application and return later.</span></figcaption></figure>
-    {saved && <Alert type="success" title="Draft saved"><p>Your progress is saved on this device. Come back here anytime to continue.</p><Link to="/apply/about?resume=true">Resume saved application</Link></Alert>}
+    {saved && <Alert type="success" title="Draft saved"><p>Your progress is saved on this device. Come back here anytime to continue.</p><Link to={resumeTarget}>Resume saved application</Link></Alert>}
     <div className="info-columns"><section><h2>What you will need</h2><ul className="check-list"><li>Applicant and address information</li><li>Identity and address documents</li><li>General disability category — no diagnosis</li><li>A preferred medical centre</li></ul></section><section><h2>What happens next</h2><ol><li>Complete 7 short steps</li><li>Review all answers</li><li>Receive an application ID</li></ol></section></div>
-    <div className="button-row"><Link className="primary-button" to={startTarget}>Start application</Link><Link className="text-button" to="/apply/about?resume=true">Resume saved draft</Link></div>
+    <div className="button-row"><Link className="primary-button" to={startTarget}>Start application</Link><Link className="text-button" to={resumeTarget}>Resume saved draft</Link></div>
   </div>
 }
 
 export function TrackPage() {
-  const { scenarios, verifyScenario } = useService()
+  const { scenarios, verifyScenario, reset } = useService()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const intent = searchParams.get('intent')
   const [reference, setReference] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [demoMessage, setDemoMessage] = useState('')
+  const clearError = (field: string) => setErrors((currentErrors) => {
+    if (!currentErrors[field]) return currentErrors
+    const remaining = { ...currentErrors }
+    delete remaining[field]
+    return remaining
+  })
+  const openScenario = (id: ScenarioId) => {
+    verifyScenario(id)
+    const app = scenarios[id]
+    if (id === 'correction') navigate(`/applications/${app.id}/correct`)
+    else if (id === 'approved') navigate(`/documents/${app.id}`)
+    else navigate('/dashboard')
+  }
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    const required: Record<string, string> = {}
+    if (!reference.trim()) required.reference = 'Enter an application reference.'
+    if (!dateOfBirth) required.dateOfBirth = 'Enter the applicant’s date of birth.'
+    if (Object.keys(required).length) {
+      setErrors(required)
+      requestAnimationFrame(() => document.getElementById('tracking-error-summary')?.focus())
+      return
+    }
     const match = (Object.entries(scenarios) as [ScenarioId, typeof scenarios[ScenarioId]][]).find(([, app]) => app.id.toUpperCase() === reference.trim().toUpperCase() && app.draft.dateOfBirth === dateOfBirth)
-    if (!match) { setError('We could not match that reference and date of birth. Check both entries and try again.'); return }
+    if (!match) { setErrors({ lookup: 'We could not match that reference and date of birth. Check both entries and try again.' }); return }
     verifyScenario(match[0])
     if (intent === 'correction' && match[0] === 'correction') navigate(`/applications/${match[1].id}/correct`)
     else if (intent === 'certificate' && match[0] === 'approved') navigate(`/documents/${match[1].id}`)
@@ -148,9 +178,9 @@ export function TrackPage() {
   const sample = intent === 'correction' ? scenarios.correction : intent === 'certificate' ? scenarios.approved : scenarios.appointment
   return <div className="container page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Track an application' }]} />
-    <PageIntro title={intent === 'correction' ? 'Verify the application before making a correction' : intent === 'certificate' ? 'Verify the application before opening a certificate' : 'Track an application'}><p>Enter two matching details before any personal information or application status is shown.</p></PageIntro>
+    <PageIntro eyebrow="Simulated tracking" title={intent === 'correction' ? 'Verify the application before making a correction' : intent === 'certificate' ? 'Verify the application before opening a certificate' : 'Track an application'}><p>Enter two matching details before any personal information or application status is shown.</p></PageIntro>
     <figure className="journey-photo-card service-page-photo tracking-photo-card"><img src="/assets/service-dashboard-consultation.jpg" alt="A clinician and visitor discussing information in a consultation room" /><figcaption><strong>Understand what happens next</strong><span>Once verified, your timeline shows the latest update, the next action and who can help.</span></figcaption></figure>
-    <div className="secure-lookup-grid"><form className="lookup-form" onSubmit={submit} noValidate><h2>Find your application</h2><div className="field"><label htmlFor="tracking-reference">Application reference</label><input id="tracking-reference" value={reference} onChange={(event) => { setReference(event.target.value); setError('') }} autoComplete="off" placeholder={`For example, ${sample.id}`} /></div><div className="field"><label htmlFor="tracking-dob">Applicant’s date of birth</label><input id="tracking-dob" type="date" value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); setError('') }} /></div>{error && <Alert type="error" title="Application not found"><p>{error}</p></Alert>}<button className="primary-button" type="submit">{intent === 'correction' ? 'Continue to correction' : intent === 'certificate' ? 'Open certificate' : 'View application status'}</button></form><aside className="sample-credentials"><p className="eyebrow">Safe sample lookup</p><h2>Try the journey</h2><p>Use reference <strong>{sample.id}</strong> with date of birth <strong>14 June 1992</strong>.</p><p>No applicant names or statuses are revealed until both values match.</p></aside></div>
+    <div className="secure-lookup-grid"><form className="lookup-form" onSubmit={submit} noValidate><h2>Find your application</h2>{Object.keys(errors).length > 0 && <div id="tracking-error-summary" className="error-summary" role="alert" tabIndex={-1}><h3>Check the information below</h3><ul>{Object.entries(errors).map(([field, message]) => <li key={field}>{field === 'reference' ? <a href="#tracking-reference">{message}</a> : field === 'dateOfBirth' ? <a href="#tracking-dob">{message}</a> : message}</li>)}</ul></div>}<div className="field"><label htmlFor="tracking-reference">Application reference</label><input id="tracking-reference" value={reference} onChange={(event) => { setReference(event.target.value); clearError('reference'); clearError('lookup') }} autoComplete="off" aria-invalid={!!errors.reference} aria-describedby={errors.reference ? 'tracking-reference-error' : undefined} placeholder={`For example, ${sample.id}`} />{errors.reference && <span id="tracking-reference-error" className="field-error">{errors.reference}</span>}</div><div className="field"><label htmlFor="tracking-dob">Applicant’s date of birth</label><input id="tracking-dob" type="date" value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); clearError('dateOfBirth'); clearError('lookup') }} aria-invalid={!!errors.dateOfBirth} aria-describedby={errors.dateOfBirth ? 'tracking-dob-error' : undefined} />{errors.dateOfBirth && <span id="tracking-dob-error" className="field-error">{errors.dateOfBirth}</span>}</div>{errors.lookup && <Alert type="error" title="Application not found"><p>{errors.lookup}</p></Alert>}<button className="primary-button" type="submit">{intent === 'correction' ? 'Continue to correction' : intent === 'certificate' ? 'Open certificate' : 'View application status'}</button></form><aside className="sample-credentials"><p className="eyebrow">Guaranteed sample journey</p><h2>Try a complete workflow</h2><p>These buttons use synthetic data and take you directly to a safe, repeatable scenario.</p><div className="sample-actions"><button type="button" className="secondary-button" onClick={() => openScenario('approved')}>Try approved sample</button><button type="button" className="secondary-button" onClick={() => openScenario('correction')}>Try correction sample</button><button type="button" className="text-button" onClick={() => openScenario('appointment')}>Try appointment sample</button></div><p className="hint">Manual check: <strong>{sample.id}</strong> and 14 June 1992.</p><button type="button" className="text-button" onClick={() => { reset(); setReference(''); setDateOfBirth(''); setErrors({}); setDemoMessage('Demo data reset. All sample journeys are ready again.') }}>Reset demo data</button>{demoMessage && <p className="success-message" role="status">{demoMessage}</p>}</aside></div>
   </div>
 }
 
@@ -188,10 +218,10 @@ export function FindHelpPage() {
   const filtered = state === 'All' ? authorities : authorities.filter((item) => item.state === state)
   return <div className="container page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Find help' }]} />
-    <PageIntro title="Find a medical centre"><p>Browse locations and accessibility details to find a centre that works for you.</p></PageIntro>
+    <PageIntro eyebrow="Demo centre data" title="Find a medical centre"><p>Browse locations and accessibility details to find a centre that works for you. Verify the details with the official authority before travelling.</p></PageIntro>
     <figure className="journey-photo-card centre-photo-card"><img src="/assets/service-centre-accessibility.jpg" alt="A wheelchair user approaching a building through an accessible ramp" /><figcaption><strong>Accessibility starts at the entrance</strong><span>Check step-free access, arrival details and support information before you visit.</span></figcaption></figure>
     <div className="field compact-field"><label htmlFor="state-filter">Filter by state</label><select id="state-filter" value={state} onChange={(e) => setState(e.target.value)}><option>All</option>{stateNames.map((item) => <option key={item}>{item}</option>)}</select></div>
-    {filtered.length ? <div className="authority-grid">{filtered.map((authority) => <article className="authority-card" key={authority.id}><p className="eyebrow">{authority.district}, {authority.state}</p><h2>{authority.name}</h2><p>{authority.address}</p><h3>Accessibility</h3><p>{authority.accessNotes}</p><p className="meta">{authority.contactLabel}</p></article>)}</div> : <div className="empty-state"><span aria-hidden="true">⌁</span><h2>No centres in this state yet</h2><p>Choose another state or continue with the normal application route.</p><button className="secondary-button" onClick={() => setState('All')}>Show all centres</button></div>}
+    {filtered.length ? <div className="authority-grid">{filtered.map((authority) => <article className="authority-card" key={authority.id}><p className="eyebrow">{authority.district}, {authority.state}</p><h2>{authority.name}</h2><p>{authority.address}</p><h3>Accessibility</h3><p>{authority.accessNotes}</p><dl className="centre-contact"><div><dt>Phone</dt><dd>{authority.phone}</dd></div><div><dt>Directions</dt><dd>{authority.directions}</dd></div><div><dt>Last checked</dt><dd>{authority.verifiedAt}</dd></div></dl><p className="meta">{authority.contactLabel}</p></article>)}</div> : <div className="empty-state"><span aria-hidden="true">⌁</span><h2>No centres in this state yet</h2><p>Choose another state or continue with the normal application route.</p><button className="secondary-button" onClick={() => setState('All')}>Show all centres</button></div>}
   </div>
 }
 
@@ -200,8 +230,9 @@ export function HelpPage() {
   const [category, setCategory] = useState('')
   const [contact, setContact] = useState('')
   const [message, setMessage] = useState('')
-  const [supportError, setSupportError] = useState('')
-  const submitSupport = (event: FormEvent) => { event.preventDefault(); if (!category || !contact.trim() || message.trim().length < 20) { setSupportError('Choose a topic, enter a contact method, and describe the problem in at least 20 characters.'); return } setSupportError(''); setCaseReference(`HELP-${String(Date.now()).slice(-6)}`) }
+  const [supportErrors, setSupportErrors] = useState<Record<string, string>>({})
+  const clearSupportError = (field: string) => setSupportErrors((currentErrors) => { if (!currentErrors[field]) return currentErrors; const remaining = { ...currentErrors }; delete remaining[field]; return remaining })
+  const submitSupport = (event: FormEvent) => { event.preventDefault(); const errors: Record<string, string> = {}; if (!category) errors.category = 'Choose a help topic.'; if (!contact.trim()) errors.contact = 'Enter an email address or mobile number for a reply.'; if (message.trim().length < 20) errors.message = 'Describe the problem in at least 20 characters.'; if (Object.keys(errors).length) { setSupportErrors(errors); requestAnimationFrame(() => document.getElementById('support-error-summary')?.focus()); return } setSupportErrors({}); setCaseReference(`HELP-${String(Date.now()).slice(-6)}`) }
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Help and FAQs' }]} />
     <PageIntro title="Help with your UDID journey"><p>Plain-language answers and a support route when an answer is not enough.</p></PageIntro>
@@ -217,14 +248,15 @@ export function HelpPage() {
       ['Can a caregiver apply for someone else?', 'Yes. Caregiver mode keeps the applicant and helper identities separate and asks for confirmation that the applicant or authorised guardian understands the submission.'],
       ['How do I change an appointment?', 'Open the appointment from the application dashboard, choose Reschedule, and confirm an available date and time. The change is added to the timeline.'],
     ].map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
-    <section className="help-panel"><h2>Still need help?</h2><p>Send a support request and keep the case reference. For in-person assistance, use <Link to="/find-help">Find a medical centre</Link>.</p>{caseReference ? <Alert type="success" title="Support request received"><p>Case <strong>{caseReference}</strong> has been created. A response will use the contact method you entered.</p><p>Do not share passwords, OTPs, bank details or medical records in follow-up messages.</p></Alert> : <form className="support-form" onSubmit={submitSupport} noValidate><div className="field"><label htmlFor="support-category">What do you need help with?</label><select id="support-category" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Choose a topic</option><option>Application status</option><option>Documents or correction</option><option>Appointment</option><option>Renewal or replacement</option><option>Accessibility support</option></select></div><div className="field"><label htmlFor="support-contact">Email or mobile number for a reply</label><input id="support-contact" value={contact} onChange={(event) => setContact(event.target.value)} autoComplete="email" /></div><div className="field"><label htmlFor="support-message">Describe the problem</label><textarea id="support-message" rows={5} value={message} onChange={(event) => setMessage(event.target.value)} /><span className="hint">Do not include Aadhaar, passwords, OTPs, medical records or payment information.</span></div>{supportError && <p className="field-error" role="alert">{supportError}</p>}<button className="secondary-button">Create support request</button></form>}</section>
+    <section className="help-panel"><h2>Still need help?</h2><p>Send a support request and keep the case reference. For in-person assistance, use <Link to="/find-help">Find a medical centre</Link>.</p>{caseReference ? <Alert type="success" title="Support request received"><p>Case <strong>{caseReference}</strong> has been created. A response will use the contact method you entered.</p><p>For a real service, this confirmation would include a response time, contact channel and escalation route. Do not share passwords, OTPs, bank details or medical records in follow-up messages.</p></Alert> : <form className="support-form" onSubmit={submitSupport} noValidate>{Object.keys(supportErrors).length > 0 && <div id="support-error-summary" className="error-summary" role="alert" tabIndex={-1}><h3>Check the support request</h3><ul>{Object.entries(supportErrors).map(([field, error]) => <li key={field}><a href={`#support-${field}`}>{error}</a></li>)}</ul></div>}<div className="field"><label htmlFor="support-category">What do you need help with?</label><select id="support-category" value={category} onChange={(event) => { setCategory(event.target.value); clearSupportError('category') }} aria-invalid={!!supportErrors.category} aria-describedby={supportErrors.category ? 'support-category-error' : undefined}><option value="">Choose a topic</option><option>Application status</option><option>Documents or correction</option><option>Appointment</option><option>Renewal or replacement</option><option>Accessibility support</option></select>{supportErrors.category && <span id="support-category-error" className="field-error">{supportErrors.category}</span>}</div><div className="field"><label htmlFor="support-contact">Email or mobile number for a reply</label><input id="support-contact" value={contact} onChange={(event) => { setContact(event.target.value); clearSupportError('contact') }} autoComplete="email" aria-invalid={!!supportErrors.contact} aria-describedby={supportErrors.contact ? 'support-contact-error' : undefined} />{supportErrors.contact && <span id="support-contact-error" className="field-error">{supportErrors.contact}</span>}</div><div className="field"><label htmlFor="support-message">Describe the problem</label><textarea id="support-message" rows={5} value={message} onChange={(event) => { setMessage(event.target.value); clearSupportError('message') }} aria-invalid={!!supportErrors.message} aria-describedby={`support-message-hint${supportErrors.message ? ' support-message-error' : ''}`} /><span id="support-message-hint" className="hint">Do not include Aadhaar, passwords, OTPs, medical records or payment information.</span>{supportErrors.message && <span id="support-message-error" className="field-error">{supportErrors.message}</span>}</div><button className="secondary-button">Create support request</button></form>}</section>
   </div>
 }
 
 export function PrototypePage() {
   return <div className="container narrow page-section">
     <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Privacy and service information' }]} />
-    <PageIntro title="Privacy and service information"><p>Understand how your information is used and where to find support.</p></PageIntro>
+    <PageIntro eyebrow="Independent prototype" title="Privacy and service information"><p>This is a student-built prototype using synthetic data. It is not connected to any government system, and no information is submitted anywhere.</p></PageIntro>
+    <section className="prototype-explainer"><h2>What this prototype simulates</h2><div className="experience-compare"><article><p className="eyebrow">In this prototype</p><ul><li>Browser-only, synthetic applications and documents</li><li>Sample tracking, appointment and certificate journeys</li><li>Centre locations and contact details marked as demo data</li></ul></article><article><p className="eyebrow">In a production service</p><ul><li>Authenticated, encrypted government integrations</li><li>Consent, audit logs, role-based access and retention controls</li><li>Verified authority data and live notification channels</li></ul></article></div></section>
     <section><h2>Your privacy</h2><p>Keep personal, identity, medical, disability and financial information secure. Do not share passwords, OTPs or payment details through support channels.</p></section>
     <section><h2>Service support</h2><p>Use the help route if you need assistance with documents, appointments, renewals, replacement, or tracking an application.</p></section>
   </div>

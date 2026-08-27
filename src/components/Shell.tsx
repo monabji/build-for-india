@@ -29,7 +29,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="prototype-bar" id="prototype-disclosure" role="note">
-        <div className="container"><strong>Prototype using synthetic data.</strong> This is not an official government portal.</div>
+        <div className="container"><strong>Independent prototype · Synthetic data.</strong> No live government connection. No data is submitted.</div>
       </div>
       <header className={`site-header ${isJourneyRoute ? 'site-header--journey' : 'site-header--public'}`} aria-describedby="prototype-disclosure">
         <div className="utility container" aria-label="Accessibility options">

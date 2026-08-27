@@ -94,6 +94,9 @@ export interface Authority {
   address: string
   accessNotes: string
   contactLabel: string
+  phone: string
+  directions: string
+  verifiedAt: string
   hours: string
   coordinates: [number, number]
 }

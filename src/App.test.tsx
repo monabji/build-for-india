@@ -37,6 +37,20 @@ describe('privacy-safe tracking journey', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View application status' }))
     expect(await screen.findByRole('heading', { name: 'Hello, Meena Das' })).toBeInTheDocument()
   })
+
+  it('provides one-click synthetic journeys and can reset them', async () => {
+    renderRoute('/track')
+    fireEvent.click(screen.getByRole('button', { name: 'Try correction sample' }))
+    expect(await screen.findByRole('heading', { name: 'Fix one document — keep everything else' })).toBeInTheDocument()
+  })
+
+  it('distinguishes missing tracking details from an unmatched lookup', async () => {
+    renderRoute('/track')
+    fireEvent.click(screen.getByRole('button', { name: 'View application status' }))
+    expect((await screen.findAllByText('Enter an application reference.')).length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Application reference')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.queryByText('Application not found')).not.toBeInTheDocument()
+  })
 })
 
 describe('route and form accessibility', () => {
@@ -76,7 +90,15 @@ describe('route and form accessibility', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save and come back later' }))
     expect(await screen.findByRole('heading', { name: 'Apply for a disability certificate and UDID card' })).toBeInTheDocument()
     expect(screen.getByText('Draft saved')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Resume saved application' })).toHaveAttribute('href', '/apply/about?resume=true')
+    expect(screen.getByRole('link', { name: 'Resume saved application' })).toHaveAttribute('href', '/apply/authority?resume=true')
     expect(localStorage.getItem('udid-redesign-draft-v1')).not.toBeNull()
+  })
+
+  it('shows field-specific validation in the support request', async () => {
+    renderRoute('/help')
+    fireEvent.click(screen.getByRole('button', { name: 'Create support request' }))
+    expect((await screen.findAllByText('Choose a help topic.')).length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('What do you need help with?')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Email or mobile number for a reply')).toHaveAttribute('aria-invalid', 'true')
   })
 })

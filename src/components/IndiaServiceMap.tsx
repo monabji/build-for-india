@@ -113,7 +113,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
 
   return <section className={`india-finder ${compact ? 'india-finder-compact' : ''}`} aria-labelledby="india-finder-title">
     <div className="finder-heading">
-      <div><p className="eyebrow"><ServiceIcon name="map" /> Start with where you live</p><h2 id="india-finder-title">Explore services across India</h2><p>Select a state or union territory. The map will move in smoothly, reveal centre markers, and let you open each centre’s details.</p></div>
+      <div><p className="eyebrow"><ServiceIcon name="map" /> Demo centre data · start with where you live</p><h2 id="india-finder-title">Explore services across India</h2><p>Select a state or union territory. The map will move in smoothly, reveal centre markers, and let you open each centre’s details. Verify information with the official authority before visiting.</p></div>
       <div className="view-switch" aria-label="Map display">
         <button type="button" aria-pressed={view === 'map'} onClick={() => setView('map')}>Map</button>
         <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>List</button>
@@ -159,7 +159,7 @@ export function IndiaServiceMap({ compact = false }: { compact?: boolean }) {
           <p className="centre-count"><strong>{centreCount(selectedName)}</strong> service {centreCount(selectedName) === 1 ? 'centre' : 'centres'}</p>
           <p className="result-language"><strong>Service languages:</strong> {languageByState[selectedName] ?? 'Regional language, Hindi and English'}</p>
           <div className="centre-selector" aria-label={`Featured centres in ${selectedName}`}>{centres.map((centre) => <button key={centre.id} type="button" className={selectedCentre?.id === centre.id ? 'active' : ''} aria-pressed={selectedCentre?.id === centre.id} onClick={() => setSelectedCentre(centre)}><span aria-hidden="true">●</span>{centre.name}</button>)}</div>
-          {selectedCentre && <article className="centre-detail" key={selectedCentre.id}><p className="centre-district">{selectedCentre.district}</p><h4>{selectedCentre.name}</h4><dl><div><dt>Location</dt><dd>{selectedCentre.address}</dd></div><div><dt>Visiting hours</dt><dd>{selectedCentre.hours}</dd></div><div><dt>Accessibility</dt><dd>{selectedCentre.accessNotes}</dd></div></dl></article>}
+          {selectedCentre && <article className="centre-detail" key={selectedCentre.id}><p className="centre-district">{selectedCentre.district}</p><h4>{selectedCentre.name}</h4><dl><div><dt>Location</dt><dd>{selectedCentre.address}</dd></div><div><dt>Visiting hours</dt><dd>{selectedCentre.hours}</dd></div><div><dt>Accessibility</dt><dd>{selectedCentre.accessNotes}</dd></div><div><dt>Phone</dt><dd>{selectedCentre.phone}</dd></div><div><dt>Directions</dt><dd>{selectedCentre.directions}</dd></div><div><dt>Last checked</dt><dd>{selectedCentre.verifiedAt}</dd></div></dl></article>}
           <Link className="primary-button" to={`/find-help?state=${encodeURIComponent(selectedName)}`}>View all centres in {selectedName}</Link>
         </>}
       </aside>

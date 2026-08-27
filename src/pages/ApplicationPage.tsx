@@ -85,11 +85,19 @@ export function ApplicationPage() {
   if (current < 0) return <Navigate to="/apply/about" replace />
   const nextAction = step === 'review' ? 'Confirm the declaration and submit the application' : `Continue to ${steps[current + 1].label.toLowerCase()}`
 
-  const update = <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => setDraft((state) => ({ ...state, [key]: value }))
+  const update = <K extends keyof ApplicantDraft>(key: K, value: ApplicantDraft[K]) => {
+    setDraft((state) => ({ ...state, [key]: value }))
+    setErrors((currentErrors) => {
+      if (!currentErrors[key]) return currentErrors
+      const remaining = { ...currentErrors }
+      delete remaining[key]
+      return remaining
+    })
+  }
   const describedBy = (id: string, hint?: boolean) => [hint ? `${id}-hint` : '', errors[id] ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined
 
   const saveOnly = () => {
-    saveDraft(draft)
+    saveDraft(draft, step)
     navigate('/apply?saved=true')
   }
 
@@ -101,7 +109,7 @@ export function ApplicationPage() {
       requestAnimationFrame(() => document.getElementById('error-summary')?.focus())
       return
     }
-    saveDraft(draft)
+    saveDraft(draft, step === 'review' ? step : steps[current + 1].id)
     setSaveState('Saved on this device just now.')
     if (step === 'review') {
       submitDraft(draft)
@@ -128,13 +136,13 @@ export function ApplicationPage() {
               <label><input type="radio" name="mode" checked={draft.mode === 'ASSISTED'} onChange={() => update('mode', 'ASSISTED')} /> I am helping as a service operator</label>
             </fieldset>
             <TextField id="applicantName" label="Applicant's name" value={draft.applicantName} onChange={(value) => update('applicantName', value)} error={errors.applicantName} describedBy={describedBy('applicantName')} />
-            <div className="field"><label htmlFor="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" value={draft.dateOfBirth} onChange={(e) => update('dateOfBirth', e.target.value)} aria-describedby={describedBy('dateOfBirth')} aria-invalid={!!errors.dateOfBirth} />{errors.dateOfBirth && <span id="dateOfBirth-error" className="field-error">{errors.dateOfBirth}</span>}</div>
-            <fieldset className="choice-group"><legend>How should updates appear?</legend>{['In-app notification', 'SMS', 'Email'].map((item) => <label key={item}><input type="radio" name="contact" checked={draft.contactPreference === item} onChange={() => update('contactPreference', item)} /> {item}</label>)}{errors.contactPreference && <span className="field-error">{errors.contactPreference}</span>}</fieldset>
+            <div className="field"><label htmlFor="dateOfBirth">Date of birth</label><input id="dateOfBirth" type="date" value={draft.dateOfBirth} onChange={(e) => update('dateOfBirth', e.target.value)} aria-describedby={describedBy('dateOfBirth')} aria-invalid={!!errors.dateOfBirth} aria-required="true" />{errors.dateOfBirth && <span id="dateOfBirth-error" className="field-error">{errors.dateOfBirth}</span>}</div>
+            <fieldset id="contactPreference" className="choice-group" aria-invalid={!!errors.contactPreference} aria-describedby={errors.contactPreference ? 'contactPreference-error' : undefined}><legend>How should updates appear?</legend>{['In-app notification', 'SMS', 'Email'].map((item) => <label key={item}><input type="radio" name="contact" checked={draft.contactPreference === item} onChange={() => update('contactPreference', item)} /> {item}</label>)}{errors.contactPreference && <span id="contactPreference-error" className="field-error">{errors.contactPreference}</span>}</fieldset>
           </>}
           {step === 'identity' && <>
             <h1>Identity and address</h1><p className="lead">We do not ask for Aadhaar, PAN or identity numbers.</p>
             <TextField id="address" label="Address" value={draft.address} onChange={(value) => update('address', value)} error={errors.address} describedBy={describedBy('address')} multiline />
-            <div className="field-row"><TextField id="district" label="District" value={draft.district} onChange={(value) => update('district', value)} error={errors.district} describedBy={describedBy('district')} /><div className="field"><label htmlFor="state">State or union territory</label><select id="state" value={draft.state} onChange={(e) => setDraft((currentDraft) => ({ ...currentDraft, state: e.target.value, authorityId: '' }))} aria-invalid={!!errors.state} aria-describedby={describedBy('state')}><option value="">Choose a state or union territory</option>{stateNames.map((stateName) => <option key={stateName}>{stateName}</option>)}</select>{errors.state && <span id="state-error" className="field-error">{errors.state}</span>}</div></div>
+            <div className="field-row"><TextField id="district" label="District" value={draft.district} onChange={(value) => update('district', value)} error={errors.district} describedBy={describedBy('district')} /><div className="field"><label htmlFor="state">State or union territory</label><select id="state" value={draft.state} onChange={(e) => { update('state', e.target.value); update('authorityId', '') }} aria-invalid={!!errors.state} aria-describedby={describedBy('state')}><option value="">Choose a state or union territory</option>{stateNames.map((stateName) => <option key={stateName}>{stateName}</option>)}</select>{errors.state && <span id="state-error" className="field-error">{errors.state}</span>}</div></div>
           </>}
           {step === 'caregiver' && <>
             <h1>{draft.mode === 'SELF' ? 'Caregiver details' : 'About the person helping'}</h1>
@@ -170,7 +178,7 @@ export function ApplicationPage() {
 }
 
 function TextField({ id, label, value, onChange, error, hint, describedBy, multiline = false }: { id: string; label: string; value: string; onChange: (value: string) => void; error?: string; hint?: string; describedBy?: string; multiline?: boolean }) {
-  const props = { id, value, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value), 'aria-invalid': !!error, 'aria-describedby': describedBy }
+  const props = { id, value, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(event.target.value), 'aria-invalid': !!error, 'aria-describedby': describedBy, 'aria-required': !hint }
   return <div className="field"><label htmlFor={id}>{label}</label>{hint && <span id={`${id}-hint`} className="hint">{hint}</span>}{multiline ? <textarea {...props} rows={3} /> : <input {...props} />}{error && <span id={`${id}-error`} className="field-error">{error}</span>}</div>
 }
 

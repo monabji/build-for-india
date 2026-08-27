@@ -4,6 +4,7 @@ import type { ApplicantDraft, ApplicationRecord, ApplicationStatus, ScenarioId, 
 
 const STORAGE_KEY = 'udid-redesign-demo-v1'
 const DRAFT_KEY = 'udid-redesign-draft-v1'
+const DRAFT_STEP_KEY = 'udid-redesign-draft-step-v1'
 
 function nowLabel() {
   return new Intl.DateTimeFormat('en-IN', { dateStyle: 'long', timeStyle: 'short' }).format(new Date())
@@ -25,8 +26,9 @@ export class DemoService {
 
   getApplication(id: ScenarioId) { return structuredClone(this.scenarios[id]) }
 
-  saveDraft(draft: ApplicantDraft) {
+  saveDraft(draft: ApplicantDraft, step = 'about') {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    localStorage.setItem(DRAFT_STEP_KEY, step)
     return structuredClone(draft)
   }
 
@@ -34,6 +36,10 @@ export class DemoService {
     const value = localStorage.getItem(DRAFT_KEY)
     if (!value) return null
     try { return JSON.parse(value) as ApplicantDraft } catch { return null }
+  }
+
+  loadDraftStep() {
+    return localStorage.getItem(DRAFT_STEP_KEY) || 'about'
   }
 
   submitDraft(draft: ApplicantDraft) {
@@ -47,6 +53,7 @@ export class DemoService {
     this.transition('new', 'SUBMITTED', 'Application submitted', 'Your application has been received.', 'Document review will begin next.')
     record.completionPercent = 100
     localStorage.removeItem(DRAFT_KEY)
+    localStorage.removeItem(DRAFT_STEP_KEY)
     this.persist()
     return structuredClone(record)
   }
@@ -130,6 +137,7 @@ export class DemoService {
     this.scenarios = createSeedScenarios()
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(DRAFT_KEY)
+    localStorage.removeItem(DRAFT_STEP_KEY)
     this.persist()
     return this.listScenarios()
   }
